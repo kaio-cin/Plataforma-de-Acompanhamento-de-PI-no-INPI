@@ -1,0 +1,523 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Protótipo — Plataforma de Acompanhamento de PI no INPI</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --navy: #1E3A5F;
+    --navy-dark: #14283F;
+    --navy-light: #EAF0F6;
+    --teal: #0F6B5C;
+    --teal-light: #E7F3F0;
+    --amber: #B7791F;
+    --amber-light: #FBF2E3;
+    --danger: #B42318;
+    --danger-light: #FCEAE9;
+    --ink: #16202B;
+    --subink: #5B6B7A;
+    --line: #DDE3E9;
+    --bg: #F7F8FA;
+    --white: #FFFFFF;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  h1, h2, h3, .serif { font-family: 'Source Serif 4', Georgia, serif; }
+  .proto-frame {
+    max-width: 1180px;
+    margin: 0 auto;
+    background: var(--white);
+    min-height: 100vh;
+    border-left: 1px solid var(--line);
+    border-right: 1px solid var(--line);
+  }
+
+  /* Prototype chrome */
+  .proto-bar {
+    background: var(--navy-dark);
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-size: 13px;
+  }
+  .proto-bar .label { color: rgba(255,255,255,0.55); }
+  .proto-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+  .proto-tabs button {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.25);
+    color: rgba(255,255,255,0.85);
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .proto-tabs button.active {
+    background: white;
+    color: var(--navy-dark);
+    border-color: white;
+    font-weight: 600;
+  }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* Login screen */
+  .login-wrap {
+    min-height: calc(100vh - 44px);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .login-left {
+    padding: 64px 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .login-left .brand { font-size: 14px; color: var(--teal); font-weight: 600; letter-spacing: 0.02em; }
+  .login-left h1 { font-size: 30px; margin: 10px 0 6px; color: var(--navy-dark); }
+  .login-left p.sub { color: var(--subink); margin: 0 0 32px; max-width: 380px; line-height: 1.5; }
+  .profile-toggle { display: flex; gap: 8px; margin-bottom: 24px; }
+  .profile-toggle button {
+    flex: 1;
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: white;
+    font-family: inherit;
+    font-size: 13.5px;
+    cursor: pointer;
+    color: var(--subink);
+  }
+  .profile-toggle button.active { border-color: var(--navy); background: var(--navy-light); color: var(--navy-dark); font-weight: 600; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--ink); }
+  .field input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 14px;
+  }
+  .btn-primary {
+    background: var(--navy);
+    color: white;
+    border: none;
+    padding: 11px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary:hover { background: var(--navy-dark); }
+  .login-right {
+    background: var(--navy-dark);
+    color: white;
+    padding: 64px 56px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .login-right .quote { font-family: 'Source Serif 4', serif; font-size: 24px; line-height: 1.4; max-width: 420px; }
+  .login-right .quote-sub { margin-top: 14px; color: rgba(255,255,255,0.65); max-width: 380px; line-height: 1.6; font-size: 14.5px;}
+  .glow { position: absolute; width: 340px; height: 340px; border-radius: 50%; background: var(--teal); opacity: 0.18; filter: blur(60px); }
+  .glow.g1 { bottom: -100px; right: -80px; }
+  .glow.g2 { top: -60px; left: -60px; background: var(--amber); }
+
+  /* App shell */
+  .app-shell { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 44px); }
+  .app-sidebar { border-right: 1px solid var(--line); padding: 22px 14px; background: var(--white); }
+  .app-sidebar .logo { font-family: 'Source Serif 4', serif; font-size: 16.5px; font-weight: 600; color: var(--navy-dark); padding: 0 8px 20px; }
+  .app-sidebar nav a {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border-radius: 7px;
+    color: var(--subink);
+    text-decoration: none;
+    font-size: 13.5px;
+    margin-bottom: 2px;
+    cursor: pointer;
+  }
+  .app-sidebar nav a.active { background: var(--navy-light); color: var(--navy-dark); font-weight: 600; }
+  .app-sidebar nav a .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; opacity: 0.5; }
+  .app-main { padding: 30px 36px; }
+  .topline { display: flex; align-items: center; justify-content: space-between; margin-bottom: 22px; }
+  .topline .who { font-size: 13px; color: var(--subink); }
+  .page-title { font-size: 22px; margin: 0 0 4px; color: var(--navy-dark); }
+  .page-sub { color: var(--subink); font-size: 14px; margin: 0 0 24px; }
+
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 26px; }
+  .card { background: white; border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+  .kpi .kpi-label { font-size: 12.5px; color: var(--subink); }
+  .kpi .kpi-value { font-family: 'Source Serif 4', serif; font-size: 26px; margin-top: 4px; color: var(--navy-dark); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  th { text-align: left; font-weight: 600; color: var(--subink); font-size: 12px; text-transform: none; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+  td { padding: 11px 10px; border-bottom: 1px solid var(--line); color: var(--ink); }
+  tr:last-child td { border-bottom: none; }
+  tr.clickable { cursor: pointer; }
+  tr.clickable:hover { background: var(--navy-light); }
+
+  .badge { display: inline-flex; align-items: center; padding: 3px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; }
+  .badge.info { background: var(--navy-light); color: var(--navy-dark); }
+  .badge.alert { background: var(--amber-light); color: var(--amber); }
+  .badge.action { background: var(--danger-light); color: var(--danger); }
+  .badge.ok { background: var(--teal-light); color: var(--teal); }
+
+  .section-title { font-size: 15px; font-weight: 600; color: var(--navy-dark); margin: 0 0 12px; }
+
+  /* Cadastro form */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 720px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  select { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; font-family: inherit; font-size: 14px; background: white; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 26px; }
+  .timeline::before { content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 2px; background: var(--line); }
+  .tl-item { position: relative; padding-bottom: 22px; }
+  .tl-item::before { content: ""; position: absolute; left: -26px; top: 3px; width: 11px; height: 11px; border-radius: 50%; background: var(--navy); border: 2px solid white; box-shadow: 0 0 0 1px var(--line); }
+  .tl-date { font-size: 12px; color: var(--subink); margin-bottom: 3px; }
+  .tl-title { font-weight: 600; font-size: 13.5px; }
+  .tl-desc { font-size: 13px; color: var(--subink); margin-top: 3px; }
+
+  .alert-item { display: flex; gap: 12px; align-items: flex-start; padding: 14px; border: 1px solid var(--line); border-radius: 9px; margin-bottom: 10px; }
+  .alert-item.unread { background: var(--navy-light); border-color: #C7D6E5; }
+  .alert-icon { width: 30px; height: 30px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0; }
+  .note { font-size: 12.5px; color: var(--subink); background: var(--teal-light); border: 1px solid #CDE5DF; padding: 10px 12px; border-radius: 8px; margin-top: 18px; }
+</style>
+</head>
+<body>
+
+<div class="proto-frame">
+  <div class="proto-bar">
+    <span class="label">Protótipo &middot;</span>
+    <div class="proto-tabs" id="tabs">
+      <button data-screen="login" class="active">Login</button>
+      <button data-screen="painel">Painel (NIT)</button>
+      <button data-screen="cadastro">Cadastro de ativo</button>
+      <button data-screen="timeline">Linha do tempo</button>
+      <button data-screen="alertas">Central de alertas</button>
+      <button data-screen="autor">Visão do autor</button>
+    </div>
+  </div>
+
+  <!-- LOGIN -->
+  <div class="screen active" id="screen-login">
+    <div class="login-wrap">
+      <div class="login-left">
+        <div class="brand">SISTEMA DE ACOMPANHAMENTO DE PI</div>
+        <h1>Entrar na plataforma</h1>
+        <p class="sub">Acompanhe patentes e programas de computador depositados no INPI, sem depender de consulta manual às publicações.</p>
+
+        <div class="profile-toggle">
+          <button class="active" onclick="setProfile(this)">Equipe do NIT</button>
+          <button onclick="setProfile(this)">Autor / Inventor</button>
+        </div>
+
+        <div class="field">
+          <label>E-mail institucional</label>
+          <input type="text" placeholder="voce@instituicao.edu.br" />
+        </div>
+        <div class="field">
+          <label>Senha</label>
+          <input type="password" placeholder="••••••••" />
+        </div>
+        <button class="btn-primary" onclick="showScreen('painel')">Entrar</button>
+      </div>
+      <div class="login-right">
+        <div class="glow g1"></div>
+        <div class="glow g2"></div>
+        <p class="quote">"Lentidão e burocracia excessiva" — o maior problema do processo manual hoje.</p>
+        <p class="quote-sub">A plataforma substitui a consulta manual periódica ao site do INPI por coleta automática das publicações da RPI, com alertas quando houver despacho relevante.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAINEL NIT -->
+  <div class="screen" id="screen-painel">
+    <div class="app-shell">
+      <aside class="app-sidebar">
+        <div class="logo">NIT · Painel</div>
+        <nav>
+          <a class="active" onclick="showScreen('painel')"><span class="dot"></span> Carteira de ativos</a>
+          <a onclick="showScreen('cadastro')"><span class="dot"></span> Novo ativo</a>
+          <a onclick="showScreen('alertas')"><span class="dot"></span> Alertas <span style="margin-left:auto;background:var(--danger);color:white;border-radius:999px;font-size:10.5px;padding:1px 6px;">3</span></a>
+          <a><span class="dot"></span> Configurações</a>
+        </nav>
+      </aside>
+      <main class="app-main">
+        <div class="topline">
+          <div>
+            <h2 class="page-title">Carteira de ativos</h2>
+            <p class="page-sub">Visão consolidada dos processos acompanhados pelo NIT</p>
+          </div>
+          <div class="who">Kaio Ruan &middot; Equipe do NIT</div>
+        </div>
+
+        <div class="kpi-row">
+          <div class="card kpi"><div class="kpi-label">Ativos cadastrados</div><div class="kpi-value">27</div></div>
+          <div class="card kpi"><div class="kpi-label">Patentes</div><div class="kpi-value">19</div></div>
+          <div class="card kpi"><div class="kpi-label">Programas de computador</div><div class="kpi-value">8</div></div>
+          <div class="card kpi"><div class="kpi-label">Alertas pendentes</div><div class="kpi-value" style="color:var(--danger)">3</div></div>
+        </div>
+
+        <div class="card" style="padding:0;">
+          <table>
+            <thead>
+              <tr>
+                <th>Título</th><th>Natureza</th><th>Processo</th><th>Depósito</th><th>Situação</th><th>Alerta</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr class="clickable" onclick="showScreen('timeline')">
+                <td>Sistema de irrigação automatizada por sensores</td><td>Patente</td><td>BR 10 2023 001234-5</td><td>12/03/2023</td><td>Em exame</td><td><span class="badge action">Exige ação</span></td>
+              </tr>
+              <tr class="clickable" onclick="showScreen('timeline')">
+                <td>Software de gestão acadêmica — SIGA</td><td>Programa de computador</td><td>BR 51 2024 000871-2</td><td>04/07/2024</td><td>Registrado</td><td><span class="badge ok">Sem pendência</span></td>
+              </tr>
+              <tr class="clickable" onclick="showScreen('timeline')">
+                <td>Processo de purificação de água por membranas</td><td>Patente</td><td>BR 10 2022 009981-0</td><td>28/09/2022</td><td>Exigência técnica</td><td><span class="badge action">Exige ação</span></td>
+              </tr>
+              <tr class="clickable" onclick="showScreen('timeline')">
+                <td>Aplicativo de monitoramento de safra — AgroTrack</td><td>Programa de computador</td><td>BR 51 2023 004512-7</td><td>15/01/2023</td><td>Em análise</td><td><span class="badge info">Publicação recente</span></td>
+              </tr>
+              <tr class="clickable" onclick="showScreen('timeline')">
+                <td>Dispositivo de baixo custo para diagnóstico laboratorial</td><td>Patente</td><td>BR 10 2021 015590-3</td><td>02/11/2021</td><td>Deferida</td><td><span class="badge ok">Sem pendência</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- CADASTRO -->
+  <div class="screen" id="screen-cadastro">
+    <div class="app-shell">
+      <aside class="app-sidebar">
+        <div class="logo">NIT · Painel</div>
+        <nav>
+          <a onclick="showScreen('painel')"><span class="dot"></span> Carteira de ativos</a>
+          <a class="active"><span class="dot"></span> Novo ativo</a>
+          <a onclick="showScreen('alertas')"><span class="dot"></span> Alertas</a>
+          <a><span class="dot"></span> Configurações</a>
+        </nav>
+      </aside>
+      <main class="app-main">
+        <h2 class="page-title">Cadastrar novo ativo</h2>
+        <p class="page-sub">Informe os dados do processo para começar a monitorá-lo automaticamente</p>
+
+        <div class="form-grid">
+          <div class="field full">
+            <label>Título</label>
+            <input type="text" placeholder="Ex: Sistema de irrigação automatizada por sensores" />
+          </div>
+          <div class="field">
+            <label>Natureza do ativo</label>
+            <select><option>Patente</option><option>Programa de computador</option></select>
+          </div>
+          <div class="field">
+            <label>Código do processo</label>
+            <input type="text" placeholder="BR 10 2024 000000-0" />
+          </div>
+          <div class="field">
+            <label>Data de depósito</label>
+            <input type="text" placeholder="dd/mm/aaaa" />
+          </div>
+          <div class="field">
+            <label>Situação atual</label>
+            <select><option>Em análise</option><option>Em exame</option><option>Exigência técnica</option><option>Deferida</option><option>Registrado</option></select>
+          </div>
+          <div class="field full">
+            <label>Inventores / Autores</label>
+            <input type="text" placeholder="Nome completo — separar múltiplos por vírgula" />
+          </div>
+          <div class="field full">
+            <label>Vincular autor com acesso de acompanhamento (opcional)</label>
+            <input type="text" placeholder="E-mail do autor/inventor" />
+          </div>
+        </div>
+        <button class="btn-primary" style="margin-top:20px;" onclick="showScreen('painel')">Salvar ativo</button>
+      </main>
+    </div>
+  </div>
+
+  <!-- TIMELINE -->
+  <div class="screen" id="screen-timeline">
+    <div class="app-shell">
+      <aside class="app-sidebar">
+        <div class="logo">NIT · Painel</div>
+        <nav>
+          <a onclick="showScreen('painel')"><span class="dot"></span> Carteira de ativos</a>
+          <a onclick="showScreen('cadastro')"><span class="dot"></span> Novo ativo</a>
+          <a onclick="showScreen('alertas')"><span class="dot"></span> Alertas</a>
+          <a><span class="dot"></span> Configurações</a>
+        </nav>
+      </aside>
+      <main class="app-main">
+        <div class="topline">
+          <div>
+            <h2 class="page-title">Sistema de irrigação automatizada por sensores</h2>
+            <p class="page-sub">Processo BR 10 2023 001234-5 &middot; Patente &middot; Depositado em 12/03/2023</p>
+          </div>
+          <span class="badge action">Exige ação</span>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;">
+          <div class="section-title">Linha do tempo de despachos</div>
+          <div class="timeline">
+            <div class="tl-item">
+              <div class="tl-date">RPI 2847 &middot; 09/09/2026</div>
+              <div class="tl-title">Exigência técnica — prazo de 60 dias</div>
+              <div class="tl-desc">Necessário complementar relatório descritivo com dados de ensaio. Exige ação do responsável até 08/11/2026.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">RPI 2810 &middot; 13/05/2026</div>
+              <div class="tl-title">Publicação do pedido</div>
+              <div class="tl-desc">Pedido publicado para conhecimento de terceiros. Caráter informativo, sem ação necessária.</div>
+            </div>
+            <div class="tl-item">
+              <div class="tl-date">RPI 2756 &middot; 04/03/2023</div>
+              <div class="tl-title">Depósito registrado</div>
+              <div class="tl-desc">Processo protocolado junto ao INPI.</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">Dados do ativo</div>
+          <table>
+            <tbody>
+              <tr><td style="color:var(--subink);width:180px;">Inventores</td><td>Fernanda Lima Costa, Rodrigo A. Nascimento</td></tr>
+              <tr><td style="color:var(--subink);">Autor com acesso</td><td>fernanda.costa@instituicao.edu.br</td></tr>
+              <tr><td style="color:var(--subink);">Situação atual</td><td>Em exame</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- ALERTAS -->
+  <div class="screen" id="screen-alertas">
+    <div class="app-shell">
+      <aside class="app-sidebar">
+        <div class="logo">NIT · Painel</div>
+        <nav>
+          <a onclick="showScreen('painel')"><span class="dot"></span> Carteira de ativos</a>
+          <a onclick="showScreen('cadastro')"><span class="dot"></span> Novo ativo</a>
+          <a class="active"><span class="dot"></span> Alertas</a>
+          <a><span class="dot"></span> Configurações</a>
+        </nav>
+      </aside>
+      <main class="app-main">
+        <h2 class="page-title">Central de alertas</h2>
+        <p class="page-sub">Despachos identificados na última coleta da RPI (terça-feira, 09/09/2026)</p>
+
+        <div class="alert-item unread">
+          <div class="alert-icon" style="background:var(--danger-light);color:var(--danger);">!</div>
+          <div>
+            <div class="tl-title">Exigência técnica — Sistema de irrigação automatizada por sensores</div>
+            <div class="tl-desc">Prazo de 60 dias para resposta, até 08/11/2026. Processo BR 10 2023 001234-5.</div>
+          </div>
+        </div>
+        <div class="alert-item unread">
+          <div class="alert-icon" style="background:var(--danger-light);color:var(--danger);">!</div>
+          <div>
+            <div class="tl-title">Exigência técnica — Processo de purificação de água por membranas</div>
+            <div class="tl-desc">Prazo de 90 dias para resposta, até 07/12/2026. Processo BR 10 2022 009981-0.</div>
+          </div>
+        </div>
+        <div class="alert-item unread">
+          <div class="alert-icon" style="background:var(--amber-light);color:var(--amber);">i</div>
+          <div>
+            <div class="tl-title">Publicação recente — Aplicativo de monitoramento de safra</div>
+            <div class="tl-desc">Despacho informativo, sem ação necessária. Processo BR 51 2023 004512-7.</div>
+          </div>
+        </div>
+        <div class="alert-item">
+          <div class="alert-icon" style="background:var(--teal-light);color:var(--teal);">✓</div>
+          <div>
+            <div class="tl-title">Registro concedido — Software de gestão acadêmica</div>
+            <div class="tl-desc">Processo concluído com sucesso. Sem pendências.</div>
+          </div>
+        </div>
+
+        <div class="note">Alertas com prazo também são enviados por e-mail no dia da coleta (terças-feiras).</div>
+      </main>
+    </div>
+  </div>
+
+  <!-- VISÃO AUTOR -->
+  <div class="screen" id="screen-autor">
+    <div class="app-shell">
+      <aside class="app-sidebar">
+        <div class="logo">Meus processos</div>
+        <nav>
+          <a class="active"><span class="dot"></span> Meus processos</a>
+          <a><span class="dot"></span> Configurações</a>
+        </nav>
+      </aside>
+      <main class="app-main">
+        <div class="topline">
+          <div>
+            <h2 class="page-title">Meus processos</h2>
+            <p class="page-sub">Acompanhamento restrito aos processos em que você é inventor/autor</p>
+          </div>
+          <div class="who">Fernanda Lima Costa &middot; Autora</div>
+        </div>
+
+        <div class="card" style="padding:0;">
+          <table>
+            <thead>
+              <tr><th>Título</th><th>Natureza</th><th>Situação</th><th></th></tr>
+            </thead>
+            <tbody>
+              <tr class="clickable" onclick="showScreen('timeline')">
+                <td>Sistema de irrigação automatizada por sensores</td><td>Patente</td><td>Em exame</td><td><span class="badge action">Exige ação</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="note">Este perfil tem apenas visualização — o cadastro e a edição de ativos são feitos pela equipe do NIT.</div>
+      </main>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  function showScreen(name) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-' + name).classList.add('active');
+    document.querySelectorAll('#tabs button').forEach(b => b.classList.toggle('active', b.dataset.screen === name));
+  }
+  document.querySelectorAll('#tabs button').forEach(b => {
+    b.addEventListener('click', () => showScreen(b.dataset.screen));
+  });
+  function setProfile(btn) {
+    document.querySelectorAll('.profile-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+  }
+</script>
+
+</body>
+</html>
