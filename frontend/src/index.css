@@ -1,0 +1,30 @@
+@import 'tailwindcss';
+
+/*
+ * Design tokens da plataforma.
+ * Cada token vira uma utility do Tailwind (ex.: bg-navy, text-subink, border-line).
+ */
+@theme {
+  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+
+  --color-navy: #1e3a5f;
+  --color-navy-dark: #14283f;
+  --color-navy-light: #eaf0f6;
+  --color-teal: #0f6b5c;
+  --color-teal-light: #e7f3f0;
+  --color-amber: #b7791f;
+  --color-amber-light: #fbf2e3;
+  --color-danger: #b42318;
+  --color-danger-light: #fceae9;
+  --color-ink: #16202b;
+  --color-subink: #5b6b7a;
+  --color-line: #dde3e9;
+  --color-canvas: #f7f8fa;
+}
+
+@layer base {
+  body {
+    @apply bg-canvas font-sans text-ink antialiased;
+  }
+}
