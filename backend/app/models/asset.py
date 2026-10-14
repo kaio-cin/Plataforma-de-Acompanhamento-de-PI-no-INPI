@@ -46,5 +46,10 @@ class Asset(Base):
     )
     author_user: Mapped[User | None] = relationship(back_populates="assets")
 
+    @property
+    def author_email(self) -> str | None:
+        """E-mail do autor vinculado, exposto diretamente na resposta da API."""
+        return self.author_user.email if self.author_user else None
+
     def __repr__(self) -> str:
         return f"<Asset id={self.id} process={self.process_number!r} type={self.asset_type.value}>"

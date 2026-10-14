@@ -1,0 +1,5 @@
+# Dependências de desenvolvimento e testes (inclui as de produção).
+-r requirements.txt
+
+pytest==9.1.1
+httpx2==2.13.1  # cliente HTTP usado pelo TestClient do FastAPI
