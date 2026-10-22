@@ -47,6 +47,8 @@ docs/
 
 ## Como rodar
 
+> **Primeira vez, sem nada instalado?** Siga o passo a passo em [`docs/COMO-RODAR.md`](docs/COMO-RODAR.md): instalação dos programas, abertura no VS Code, atalhos (`Ctrl+Shift+B` sobe API e site juntos) e solução dos problemas mais comuns.
+
 ### Backend
 
 ```bash

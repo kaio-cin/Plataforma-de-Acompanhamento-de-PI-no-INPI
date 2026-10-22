@@ -1,0 +1,141 @@
+{
+  // Atalhos do projeto. Use Ctrl+Shift+P → "Tasks: Run Task" e escolha uma tarefa.
+  // Ctrl+Shift+B executa direto "2. Rodar sistema (API + site)".
+  //
+  // As tarefas chamam o Python do ambiente virtual (backend/.venv) diretamente,
+  // então não é preciso ativar o .venv nem mexer na política de scripts do PowerShell.
+  "version": "2.0.0",
+  "windows": {
+    "options": {
+      "shell": { "executable": "powershell.exe", "args": ["-NoProfile", "-Command"] }
+    }
+  },
+  "tasks": [
+    // ---------- Primeira vez ----------
+    {
+      "label": "1. Instalar dependências (primeira vez)",
+      "dependsOrder": "sequence",
+      "dependsOn": [
+        "Instalar: ambiente Python",
+        "Instalar: pacotes do backend",
+        "Instalar: pacotes do site",
+        "Banco: dados de demonstração"
+      ],
+      "problemMatcher": []
+    },
+    {
+      "label": "Instalar: ambiente Python",
+      "type": "shell",
+      "command": "python3 -m venv .venv",
+      "windows": { "command": "py -3 -m venv .venv" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Instalar: pacotes do backend",
+      "type": "shell",
+      "command": ".venv/bin/python -m pip install -r requirements-dev.txt",
+      "windows": { "command": ".venv\\Scripts\\python.exe -m pip install -r requirements-dev.txt" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Instalar: pacotes do site",
+      "type": "shell",
+      "command": "npm install --no-audit --no-fund",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "problemMatcher": []
+    },
+
+    // ---------- Banco de dados ----------
+    {
+      "label": "Banco: dados de demonstração",
+      "type": "shell",
+      "command": ".venv/bin/python -m app.seed",
+      "windows": { "command": ".venv\\Scripts\\python.exe -m app.seed" },
+      "options": { "cwd": "${workspaceFolder}/backend", "env": { "PYTHONIOENCODING": "utf-8" } },
+      "problemMatcher": []
+    },
+    {
+      "label": "Banco: recomeçar do zero (apaga tudo)",
+      "type": "shell",
+      "command": ".venv/bin/python -m app.seed --reset",
+      "windows": { "command": ".venv\\Scripts\\python.exe -m app.seed --reset" },
+      "options": { "cwd": "${workspaceFolder}/backend", "env": { "PYTHONIOENCODING": "utf-8" } },
+      "problemMatcher": []
+    },
+
+    // ---------- Rodar ----------
+    {
+      "label": "2. Rodar sistema (API + site)",
+      "dependsOrder": "parallel",
+      "dependsOn": ["API (backend)", "Site (frontend)"],
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "API (backend)",
+      "type": "shell",
+      "command": ".venv/bin/python -m uvicorn app.main:app --reload",
+      "windows": { "command": ".venv\\Scripts\\python.exe -m uvicorn app.main:app --reload" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "isBackground": true,
+      "presentation": { "group": "sistema", "panel": "dedicated" },
+      "problemMatcher": {
+        "owner": "uvicorn",
+        "severity": "error",
+        "pattern": { "regexp": "^ERROR:\\s+(.*)$", "message": 1 },
+        "background": {
+          "activeBegins": true,
+          "beginsPattern": "Will watch for changes|Started server process",
+          "endsPattern": "Application startup complete"
+        }
+      }
+    },
+    {
+      "label": "Site (frontend)",
+      "type": "shell",
+      "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "isBackground": true,
+      "presentation": { "group": "sistema", "panel": "dedicated" },
+      "problemMatcher": {
+        "owner": "vite",
+        "severity": "error",
+        "pattern": { "regexp": "^\\s*error\\s+(.*)$", "message": 1 },
+        "background": {
+          "activeBegins": true,
+          "beginsPattern": "VITE",
+          "endsPattern": "ready in"
+        }
+      }
+    },
+
+    // ---------- Testes ----------
+    {
+      "label": "Testes: backend",
+      "type": "shell",
+      "command": ".venv/bin/python -m pytest",
+      "windows": { "command": ".venv\\Scripts\\python.exe -m pytest" },
+      "options": { "cwd": "${workspaceFolder}/backend" },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Testes: frontend (unitários)",
+      "type": "shell",
+      "command": "npm test",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "Testes: ponta a ponta",
+      "type": "shell",
+      "command": "npm run test:e2e",
+      "options": { "cwd": "${workspaceFolder}/frontend" },
+      "group": "test",
+      "problemMatcher": []
+    }
+  ]
+}

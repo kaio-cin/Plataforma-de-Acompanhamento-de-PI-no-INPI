@@ -1,0 +1,10 @@
+{
+  // Extensões recomendadas: o VS Code oferece instalá-las ao abrir o projeto.
+  "recommendations": [
+    "ms-python.python",
+    "bradlc.vscode-tailwindcss",
+    "oxc.oxc-vscode",
+    "vitest.explorer",
+    "ms-playwright.playwright"
+  ]
+}

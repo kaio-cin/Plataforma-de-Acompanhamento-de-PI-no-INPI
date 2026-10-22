@@ -11,6 +11,9 @@ venv/
 *.sqlite3
 
 # Editor / SO
-.vscode/
+# (.vscode é ignorado, exceto as recomendações e tarefas compartilhadas do projeto)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/tasks.json
 .idea/
 .DS_Store
