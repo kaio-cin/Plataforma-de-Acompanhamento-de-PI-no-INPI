@@ -1,0 +1,20 @@
+# Padroniza o fim de linha como LF no repositório e nas cópias de trabalho,
+# em qualquer sistema (evita os avisos "LF will be replaced by CRLF" no Windows).
+* text=auto eol=lf
+
+# Scripts do Windows precisam de CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+*.ps1 text eol=crlf
+
+# Arquivos binários: nunca converter.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+*.db binary
+*.woff binary
+*.woff2 binary
