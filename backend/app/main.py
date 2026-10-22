@@ -18,7 +18,8 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
     yield
 
 
-def create_app() -> FastAPI:
+def create_app(cors_origins: list[str] | None = None) -> FastAPI:
+    """Monta a aplicação. `cors_origins` substitui a configuração (usado nos testes)."""
     app = FastAPI(
         title=settings.app_name,
         description="API para gestão e acompanhamento de patentes e programas de computador junto ao INPI.",
@@ -26,12 +27,15 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # O frontend roda em outra origem (Vite em :5173) e se autentica com o cabeçalho
+    # Authorization (JWT), sem cookies — por isso allow_credentials fica desligado.
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=settings.cors_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_origins=cors_origins if cors_origins is not None else settings.cors_origins,
+        allow_credentials=False,
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Accept"],
+        max_age=600,
     )
 
     app.include_router(health.router, prefix=settings.api_prefix)

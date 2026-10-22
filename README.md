@@ -39,6 +39,8 @@ frontend/
     utils/       # formatação e regras de apresentação dos ativos
     config.js    # nome do produto e da instituição
     index.css    # design tokens (cores claro/escuro, tipografia, raios, sombras)
+  e2e/           # testes ponta a ponta (Playwright)
+  playwright.config.js
 docs/
   prototipo-radar-inpi.html  # protótipo navegável de referência
 ```
@@ -66,7 +68,7 @@ Com o ambiente virtual ativo, dentro de `backend`:
 python -m app.seed
 ```
 
-O comando cria 5 ativos de exemplo e os usuários abaixo (pode ser executado mais de uma vez):
+O comando cria 5 ativos de exemplo e os usuários abaixo. Pode ser executado mais de uma vez sem duplicar nada; para apagar tudo e recomeçar do zero, use `python -m app.seed --reset`.
 
 | Perfil | E-mail | Senha |
 | --- | --- | --- |
@@ -75,13 +77,6 @@ O comando cria 5 ativos de exemplo e os usuários abaixo (pode ser executado mai
 | AUTOR | `joao.silva@instituicao.edu.br` | `autor12345` |
 
 No Swagger, clique em **Authorize**, informe o e-mail no campo `username` e a senha para testar as rotas protegidas.
-
-#### Testes
-
-```bash
-pip install -r requirements-dev.txt
-pytest
-```
 
 ### Rotas da API
 
@@ -113,6 +108,44 @@ A aplicação abre em `http://localhost:5173`. Com a API rodando e o seed execut
 A busca da barra superior (atalho `/`) filtra a carteira por título, processo, inventor, natureza ou situação. O tema escuro fica no menu do usuário. Alertas, calendário, tarefas, relatórios e glossário aparecem no menu como "em breve": dependem da leitura da RPI e de etapas futuras.
 
 Se a API estiver em outro endereço, copie `frontend/.env.example` para `frontend/.env.local` e ajuste `VITE_API_URL`.
+
+### Integração frontend ↔ API (CORS)
+
+O frontend chama a API com a Fetch API (`frontend/src/api/client.js`), enviando o JWT no cabeçalho `Authorization`. Como os dois rodam em portas diferentes, a API libera por CORS só os endereços listados em `CORS_ORIGINS` (padrão: `http://localhost:5173` e `http://127.0.0.1:5173`). Para publicar o frontend em outro endereço, inclua-o no `.env` do backend:
+
+```bash
+CORS_ORIGINS=http://localhost:5173,https://radar.instituicao.edu.br
+```
+
+## Testes
+
+| Suíte | Onde | O que cobre | Comando |
+| --- | --- | --- | --- |
+| Backend | `backend/tests` | login e JWT, permissões por perfil, cadastro e listagem, CORS, seed | `pytest` |
+| Unitários do frontend | `frontend/src/**/*.test.js` | formatação de datas e nomes, regras de situação, busca, cliente HTTP | `npm test` |
+| Ponta a ponta | `frontend/e2e` | login → painel → ativos do banco → cadastro → visão do autor, num navegador real | `npm run test:e2e` |
+
+**Backend** (em `backend`, com o `.venv` ativo):
+
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
+
+**Frontend** (em `frontend`):
+
+```bash
+npm test
+```
+
+**Ponta a ponta** (em `frontend`). Na primeira vez, instale o navegador de testes:
+
+```bash
+npx playwright install chromium
+npm run test:e2e
+```
+
+O teste ponta a ponta sobe sozinho a API (porta 8001) e o frontend (porta 5174), com um banco próprio (`backend/e2e.db`) recriado a cada execução, então não interfere nos servidores nem nos dados de desenvolvimento. Ele usa o Python do `backend/.venv`; basta ter instalado as dependências do backend antes. Para acompanhar os testes visualmente, use `npm run test:e2e:ui`.
 
 ## Referências
 

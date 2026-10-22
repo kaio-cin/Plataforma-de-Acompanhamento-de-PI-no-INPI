@@ -8,4 +8,10 @@ export default defineConfig({
   server: {
     port: 5173,
   },
+  test: {
+    // Testes unitários ficam junto do código (src/**/*.test.js);
+    // os testes ponta a ponta (e2e/) rodam pelo Playwright.
+    include: ['src/**/*.test.{js,jsx}'],
+    environment: 'node',
+  },
 })

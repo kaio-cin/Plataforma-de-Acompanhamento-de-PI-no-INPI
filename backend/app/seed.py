@@ -1,18 +1,20 @@
 """Popula o banco com usuários e ativos de demonstração.
 
 Execute a partir da pasta backend:  python -m app.seed
+Para recomeçar do zero (apaga tudo):  python -m app.seed --reset
 
-É idempotente: registros que já existem (mesmo e-mail ou processo) são mantidos.
+Sem --reset é idempotente: registros que já existem (mesmo e-mail ou processo) são mantidos.
 As senhas abaixo são apenas para desenvolvimento — nunca use este script em produção.
 """
 
+import argparse
 from datetime import date
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password
-from app.database import SessionLocal
+from app.database import Base, SessionLocal, engine
 from app.database.init_db import init_db
 from app.models import Asset, AssetType, User, UserRole
 
@@ -92,8 +94,28 @@ def seed(db: Session) -> None:
     db.commit()
 
 
-def main() -> None:
+def reset_db() -> None:
+    """Apaga todas as tabelas e as recria vazias."""
+    import app.models  # noqa: F401  (registra as tabelas no metadata)
+
+    Base.metadata.drop_all(bind=engine)
     init_db()
+
+
+def main(argv: list[str] | None = None) -> None:
+    parser = argparse.ArgumentParser(description="Popula o banco com dados de demonstração.")
+    parser.add_argument(
+        "--reset",
+        action="store_true",
+        help="apaga TODOS os dados antes de popular (usado pelos testes ponta a ponta)",
+    )
+    args = parser.parse_args(argv)
+
+    if args.reset:
+        print("Apagando os dados existentes...")
+        reset_db()
+    else:
+        init_db()
     print("Populando o banco com dados de demonstração...")
     with SessionLocal() as db:
         seed(db)
