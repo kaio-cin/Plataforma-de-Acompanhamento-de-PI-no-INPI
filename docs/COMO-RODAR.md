@@ -2,6 +2,8 @@
 
 Guia para quem nunca instalou nada: dos programas necessários até o sistema aberto no navegador. As instruções são para **Windows**; quem usa macOS ou Linux encontra as diferenças na seção 9.
 
+📄 **Versão para imprimir ou compartilhar:** [`COMO-RODAR.pdf`](COMO-RODAR.pdf).
+
 **Tempo estimado:** 20 a 30 minutos na primeira vez. Depois disso, rodar o sistema leva menos de um minuto.
 
 ---
