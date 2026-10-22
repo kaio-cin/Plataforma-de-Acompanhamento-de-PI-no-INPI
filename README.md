@@ -29,12 +29,13 @@ backend/
   requirements-dev.txt
 frontend/
   src/
-    api/         # cliente HTTP e chamadas à API
-    components/  # componentes reutilizáveis de UI
+    api/         # cliente HTTP (fetch + JWT) e chamadas à API
+    components/  # componentes reutilizáveis (ui/ tem botões, campos, alertas…)
     layouts/     # casca da aplicação (sidebar + cabeçalho)
-    pages/       # telas (login, painel, cadastro)
-    context/     # estado global (sessão do usuário)
-    hooks/       # hooks customizados
+    pages/       # telas: login, carteira de ativos, cadastro
+    context/     # sessão do usuário (AuthProvider)
+    hooks/       # useAuth, useAssets
+    utils/       # formatação de datas e regras de apresentação dos ativos
 ```
 
 ## Como rodar
@@ -95,7 +96,16 @@ npm install
 npm run dev
 ```
 
-A aplicação abre em `http://localhost:5173`.
+A aplicação abre em `http://localhost:5173`. Com a API rodando e o seed executado, entre com uma das contas de demonstração (em modo de desenvolvimento, a tela de login tem atalhos que preenchem as credenciais).
+
+| Tela | Rota | Perfil |
+| --- | --- | --- |
+| Login | `/login` | público |
+| Carteira de ativos (KPIs + tabela) | `/` | NIT |
+| Meus processos | `/` | AUTOR |
+| Cadastro de ativo | `/ativos/novo` | NIT |
+
+Se a API estiver em outro endereço, copie `frontend/.env.example` para `frontend/.env.local` e ajuste `VITE_API_URL`.
 
 ## Referências
 
