@@ -119,6 +119,8 @@ CORS_ORIGINS=http://localhost:5173,https://radar.instituicao.edu.br
 
 ## Testes
 
+A documentação completa — cada caso de teste, ferramentas, resultados, rastreabilidade com as histórias de usuário e limitações — está em [`docs/TESTES.md`](docs/TESTES.md).
+
 | Suíte | Onde | O que cobre | Comando |
 | --- | --- | --- | --- |
 | Backend | `backend/tests` | login e JWT, permissões por perfil, cadastro e listagem, CORS, seed | `pytest` |
