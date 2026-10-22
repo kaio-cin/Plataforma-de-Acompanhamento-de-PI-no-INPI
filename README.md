@@ -1,4 +1,4 @@
-# Plataforma de Acompanhamento de PI no INPI
+# Radar INPI — Plataforma de Acompanhamento de PI no INPI
 
 MVP de um sistema para gestão e acompanhamento de **patentes** e **programas de computador** junto ao INPI, voltado aos Núcleos de Inovação Tecnológica (NITs). O objetivo é substituir a consulta manual às publicações da Revista da Propriedade Industrial (RPI) por coleta automática, cruzamento com os processos cadastrados e alertas de prazo.
 
@@ -10,6 +10,7 @@ MVP de um sistema para gestão e acompanhamento de **patentes** e **programas de
 | Banco | SQLite no MVP (pronto para migrar para PostgreSQL via `DATABASE_URL`) |
 | Autenticação | JWT (`python-jose`) + hash bcrypt (`passlib`) |
 | Frontend | React 19 + Vite, Tailwind CSS v4, React Router |
+| Design | Design system do Radar INPI: Manrope + IBM Plex Mono, tema claro e escuro |
 
 ## Estrutura
 
@@ -30,12 +31,16 @@ backend/
 frontend/
   src/
     api/         # cliente HTTP (fetch + JWT) e chamadas à API
-    components/  # componentes reutilizáveis (ui/ tem botões, campos, alertas…)
-    layouts/     # casca da aplicação (sidebar + cabeçalho)
-    pages/       # telas: login, carteira de ativos, cadastro
+    components/  # componentes reutilizáveis (ui/ tem botões, campos, abas, chips…)
+    layouts/     # casca da aplicação (barra lateral, barra superior, menu do usuário)
+    pages/       # telas: login, carteira, meus ativos, cadastro
     context/     # sessão do usuário (AuthProvider)
-    hooks/       # useAuth, useAssets
-    utils/       # formatação de datas e regras de apresentação dos ativos
+    hooks/       # useAuth, useAssets, useTheme
+    utils/       # formatação e regras de apresentação dos ativos
+    config.js    # nome do produto e da instituição
+    index.css    # design tokens (cores claro/escuro, tipografia, raios, sombras)
+docs/
+  prototipo-radar-inpi.html  # protótipo navegável de referência
 ```
 
 ## Como rodar
@@ -96,17 +101,19 @@ npm install
 npm run dev
 ```
 
-A aplicação abre em `http://localhost:5173`. Com a API rodando e o seed executado, entre com uma das contas de demonstração (em modo de desenvolvimento, a tela de login tem atalhos que preenchem as credenciais).
+A aplicação abre em `http://localhost:5173`. Com a API rodando e o seed executado, entre com uma das contas de demonstração (em modo de desenvolvimento, a tela de login tem atalhos que entram direto com elas).
 
 | Tela | Rota | Perfil |
 | --- | --- | --- |
 | Login | `/login` | público |
-| Carteira de ativos (KPIs + tabela) | `/` | NIT |
-| Meus processos | `/` | AUTOR |
+| Carteira de ativos (indicadores, abas, filtros e tabela) | `/` | NIT |
+| Meus ativos | `/` | AUTOR |
 | Cadastro de ativo | `/ativos/novo` | NIT |
+
+A busca da barra superior (atalho `/`) filtra a carteira por título, processo, inventor, natureza ou situação. O tema escuro fica no menu do usuário. Alertas, calendário, tarefas, relatórios e glossário aparecem no menu como "em breve": dependem da leitura da RPI e de etapas futuras.
 
 Se a API estiver em outro endereço, copie `frontend/.env.example` para `frontend/.env.local` e ajuste `VITE_API_URL`.
 
 ## Referências
 
-O arquivo `prototipo aprimorado (1).html` é o protótipo navegável usado como referência de UI/UX e regras de negócio. O código do sistema não reaproveita o HTML/CSS dele.
+O arquivo `docs/prototipo-radar-inpi.html` é o protótipo navegável do Radar INPI, usado como referência de UI/UX, arquitetura de informação e regras de negócio (abra no navegador; ele carrega React e fontes de CDN). O código do sistema não reaproveita o HTML/CSS dele: os tokens e componentes foram reconstruídos em React + Tailwind.

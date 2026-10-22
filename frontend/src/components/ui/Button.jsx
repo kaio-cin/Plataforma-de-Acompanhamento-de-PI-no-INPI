@@ -1,19 +1,44 @@
+import { Icon } from './Icon'
 import { Spinner } from './Spinner'
 
 const VARIANTS = {
-  primary: 'bg-navy text-white hover:bg-navy-dark disabled:bg-navy/60',
-  secondary: 'border border-line bg-white text-ink hover:bg-canvas disabled:text-subink',
+  primary: 'border-primary bg-primary text-on-primary hover:border-primary-hover hover:bg-primary-hover',
+  secondary: 'border-line bg-surface text-ink hover:bg-surface-muted',
+  ghost: 'border-transparent bg-transparent text-primary-ink hover:bg-primary-soft',
+  danger: 'border-line bg-surface text-critical hover:bg-critical-soft',
 }
 
-export function Button({ variant = 'primary', loading = false, disabled, className = '', children, ...props }) {
+const SIZES = {
+  md: 'h-[42px] gap-2 rounded-md px-5 text-sm',
+  sm: 'h-[34px] gap-1.5 rounded-sm px-3 text-[13px]',
+}
+
+/** Botão do design system. `as` permite renderizar um Link com o mesmo visual. */
+export function Button({
+  as: Component = 'button',
+  variant = 'secondary',
+  size = 'md',
+  icon,
+  iconRight,
+  loading = false,
+  disabled,
+  className = '',
+  children,
+  ...props
+}) {
+  const iconSize = size === 'sm' ? 16 : 18
+  const isButton = Component === 'button'
+
   return (
-    <button
+    <Component
+      type={isButton ? 'button' : undefined}
       {...props}
-      disabled={disabled || loading}
-      className={`inline-flex items-center justify-center gap-2 rounded-lg px-4.5 py-2.5 text-sm font-semibold transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-navy disabled:cursor-not-allowed ${VARIANTS[variant]} ${className}`}
+      disabled={isButton ? disabled || loading : undefined}
+      className={`inline-flex items-center justify-center border leading-5 font-bold whitespace-nowrap transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${SIZES[size]} ${VARIANTS[variant]} ${className}`}
     >
-      {loading && <Spinner className="text-current" />}
+      {loading ? <Spinner className="text-current" /> : icon && <Icon name={icon} size={iconSize} />}
       {children}
-    </button>
+      {iconRight && <Icon name={iconRight} size={iconSize} />}
+    </Component>
   )
 }

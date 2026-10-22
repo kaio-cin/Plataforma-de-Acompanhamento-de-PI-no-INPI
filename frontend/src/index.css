@@ -1,30 +1,180 @@
 @import 'tailwindcss';
 
 /*
- * Design tokens da plataforma.
- * Cada token vira uma utility do Tailwind (ex.: bg-navy, text-subink, border-line).
+ * Design tokens do Radar INPI (referência: docs/prototipo-radar-inpi.html).
+ * As cores são variáveis CSS trocadas pelo atributo data-theme no <html>;
+ * o bloco @theme inline as expõe como utilities do Tailwind (bg-surface, text-ink…).
  */
-@theme {
-  --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-  --font-serif: 'Source Serif 4', Georgia, serif;
 
-  --color-navy: #1e3a5f;
-  --color-navy-dark: #14283f;
-  --color-navy-light: #eaf0f6;
-  --color-teal: #0f6b5c;
-  --color-teal-light: #e7f3f0;
-  --color-amber: #b7791f;
-  --color-amber-light: #fbf2e3;
-  --color-danger: #b42318;
-  --color-danger-light: #fceae9;
-  --color-ink: #16202b;
-  --color-subink: #5b6b7a;
-  --color-line: #dde3e9;
-  --color-canvas: #f7f8fa;
+:root,
+[data-theme='light'] {
+  --canvas: #f4f6fa;
+  --surface: #ffffff;
+  --surface-muted: #eef2f8;
+  --line: #e2e7ef;
+  --line-strong: #8592a8;
+  --ink: #0e1a33;
+  --ink-muted: #475670;
+  --ink-subtle: #5f6c84;
+  --navy: #0f2557;
+  --navy-active: #21428a;
+  --nav-ink: #b9c7e6;
+  --nav-ink-active: #ffffff;
+  --primary: #1d3f91;
+  --primary-hover: #163274;
+  --on-primary: #ffffff;
+  --primary-soft: #e7edfb;
+  --primary-ink: #1d3f91;
+  --accent: #2b6cc4;
+  --focus-ring: #2b6cc4;
+  --critical: #b42332;
+  --critical-soft: #fcebed;
+  --warning: #8f4d0a;
+  --warning-soft: #fcf1e2;
+  --info: #0d6573;
+  --info-soft: #e2f3f5;
+  --success: #1b7340;
+  --success-soft: #e5f3ea;
+  --shadow-card-value: 0 1px 2px rgba(14, 26, 51, 0.05), 0 2px 8px rgba(14, 26, 51, 0.04);
+  --shadow-raised-value: 0 8px 24px rgba(14, 26, 51, 0.1), 0 2px 6px rgba(14, 26, 51, 0.06);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --canvas: #0a1120;
+  --surface: #111a2c;
+  --surface-muted: #17223a;
+  --line: #222d45;
+  --line-strong: #5d6c8a;
+  --ink: #e9eef7;
+  --ink-muted: #aab7cd;
+  --ink-subtle: #919fb8;
+  --navy: #0f1d3d;
+  --navy-active: #213a70;
+  --nav-ink: #9fb0d4;
+  --nav-ink-active: #ffffff;
+  --primary: #8db0ff;
+  --primary-hover: #a8c3ff;
+  --on-primary: #0a1633;
+  --primary-soft: #1b2d55;
+  --primary-ink: #b4caff;
+  --accent: #77a8f2;
+  --focus-ring: #8db0ff;
+  --critical: #ff8f93;
+  --critical-soft: #3b161b;
+  --warning: #f0b46e;
+  --warning-soft: #33240f;
+  --info: #6cc9d6;
+  --info-soft: #0f2d33;
+  --success: #79d39f;
+  --success-soft: #11291c;
+  --shadow-card-value: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-raised-value: 0 8px 24px rgba(0, 0, 0, 0.5);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --font-sans: 'Manrope', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --color-canvas: var(--canvas);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-navy: var(--navy);
+  --color-navy-active: var(--navy-active);
+  --color-nav-ink: var(--nav-ink);
+  --color-nav-ink-active: var(--nav-ink-active);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-on-primary: var(--on-primary);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-ink: var(--primary-ink);
+  --color-accent: var(--accent);
+  --color-focus: var(--focus-ring);
+  --color-critical: var(--critical);
+  --color-critical-soft: var(--critical-soft);
+  --color-warning: var(--warning);
+  --color-warning-soft: var(--warning-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-xl: 24px;
+
+  --shadow-card: var(--shadow-card-value);
+  --shadow-raised: var(--shadow-raised-value);
+}
+
+/* Escala tipográfica do protótipo */
+@utility type-display {
+  font-size: 36px;
+  line-height: 42px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+@utility type-title {
+  font-size: 26px;
+  line-height: 32px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+@utility type-heading {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+@utility type-kpi {
+  font-size: 34px;
+  line-height: 40px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+@utility type-eyebrow {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+@utility type-body {
+  font-size: 15px;
+  line-height: 22px;
+  font-weight: 500;
+}
+@utility type-body-sm {
+  font-size: 13px;
+  line-height: 20px;
+  font-weight: 500;
+}
+@utility type-label {
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 700;
+}
+@utility type-caption {
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
 }
 
 @layer base {
   body {
     @apply bg-canvas font-sans text-ink antialiased;
+    font-feature-settings: 'tnum' 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
   }
 }

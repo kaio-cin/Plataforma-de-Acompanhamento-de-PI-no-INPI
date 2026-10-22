@@ -1,72 +1,95 @@
 import { NavLink } from 'react-router-dom'
 
 import { Icon } from '../components/ui/Icon'
+import { APP_NAME, INSTITUTION_SHORT } from '../config'
 
-// Itens com `soon` fazem parte da arquitetura de informação do protótipo,
-// mas dependem de etapas futuras (leitura da RPI, preferências).
+// Itens com `soon` seguem a arquitetura de informação do protótipo, mas dependem
+// de etapas futuras (leitura da RPI, calendário de prazos, tarefas, relatórios).
 const NAV_BY_ROLE = {
   NIT: {
-    area: 'Painel do NIT',
+    section: 'Acompanhamento',
     items: [
-      { to: '/', label: 'Carteira de ativos', icon: 'folder', end: true },
-      { to: '/ativos/novo', label: 'Novo ativo', icon: 'plus' },
-      { label: 'Alertas', icon: 'bell', soon: true },
-      { label: 'Configurações', icon: 'settings', soon: true },
+      { to: '/', label: 'Carteira de ativos', icon: 'carteira', end: true },
+      { label: 'Alertas', icon: 'sino', soon: true },
+      { label: 'Calendário', icon: 'calendario', soon: true },
+      { label: 'Tarefas', icon: 'tarefa', soon: true },
+      { label: 'Relatórios', icon: 'relatorio', soon: true },
+      { label: 'Glossário de despachos', icon: 'glossario', soon: true },
     ],
   },
   AUTOR: {
-    area: 'Área do autor',
+    section: 'Inventor(a)',
     items: [
-      { to: '/', label: 'Meus processos', icon: 'folder', end: true },
-      { label: 'Configurações', icon: 'settings', soon: true },
+      { to: '/', label: 'Meus ativos', icon: 'invencao', end: true },
+      { label: 'Alertas', icon: 'sino', soon: true },
+      { label: 'Calendário', icon: 'calendario', soon: true },
+      { label: 'Glossário de despachos', icon: 'glossario', soon: true },
     ],
   },
 }
 
-const ITEM_CLASSES = 'flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-[13.5px] transition-colors'
+const ITEM = 'flex h-11 flex-none items-center gap-3 rounded-md px-3 text-sm font-semibold'
+const SECTION = 'px-3 pt-4 pb-1 text-[11px] font-bold tracking-[0.12em] uppercase opacity-85'
 
 export function Sidebar({ role, onNavigate }) {
-  const { area, items } = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.AUTOR
+  const { section, items } = NAV_BY_ROLE[role] ?? NAV_BY_ROLE.AUTOR
 
   return (
-    <div className="flex h-full flex-col px-3.5 py-6">
-      <div className="px-2 pb-6">
-        <p className="font-serif text-[15.5px] leading-tight font-semibold whitespace-nowrap text-navy-dark">
-          Acompanhamento de PI
-        </p>
-        <p className="mt-0.5 text-xs text-subink">{area}</p>
-      </div>
+    <nav aria-label="Navegação principal" className="flex h-full flex-col gap-2 overflow-y-auto bg-navy px-4 py-5 text-nav-ink">
+      <BrandMark subtitle={`NIT · ${INSTITUTION_SHORT}`} />
 
-      <nav aria-label="Navegação principal" className="space-y-0.5">
-        {items.map((item) =>
-          item.soon ? (
-            <span
-              key={item.label}
-              className={`${ITEM_CLASSES} cursor-default text-subink/55`}
-              title="Disponível em uma próxima etapa"
-            >
-              <Icon name={item.icon} />
-              <span className="min-w-0 flex-1 truncate">{item.label}</span>
-              <span className="shrink-0 rounded bg-canvas px-1.5 py-0.5 text-[9.5px] font-medium tracking-wide whitespace-nowrap uppercase">
-                em breve
-              </span>
-            </span>
-          ) : (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onNavigate}
-              className={({ isActive }) =>
-                `${ITEM_CLASSES} ${isActive ? 'bg-navy-light font-semibold text-navy-dark' : 'text-subink hover:bg-canvas hover:text-ink'}`
-              }
-            >
-              <Icon name={item.icon} />
-              {item.label}
-            </NavLink>
-          ),
-        )}
-      </nav>
+      <p className={SECTION}>{section}</p>
+      {items
+        .filter((item) => !item.soon)
+        .map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.end}
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              `${ITEM} transition-colors hover:bg-navy-active hover:text-nav-ink-active ${isActive ? 'bg-navy-active text-nav-ink-active' : ''}`
+            }
+          >
+            <Icon name={item.icon} />
+            {item.label}
+          </NavLink>
+        ))}
+
+      <p className={SECTION}>Em breve</p>
+      {items
+        .filter((item) => item.soon)
+        .map((item) => (
+          <span
+            key={item.label}
+            className={`${ITEM} cursor-default opacity-55`}
+            title="Disponível em uma próxima etapa"
+            aria-disabled="true"
+          >
+            <Icon name={item.icon} />
+            {item.label}
+          </span>
+        ))}
+
+      <div className="mt-auto rounded-lg bg-navy-active p-4 text-xs leading-[18px] font-semibold">
+        <strong className="mb-0.5 block text-[13px] text-nav-ink-active">Coleta automática da RPI</strong>
+        A leitura semanal dos XMLs do INPI chega em uma próxima etapa.
+      </div>
+    </nav>
+  )
+}
+
+/** Marca do produto, usada na barra lateral e no login. */
+export function BrandMark({ subtitle }) {
+  return (
+    <div className="flex items-center gap-3 px-2 pb-5">
+      <span className="flex size-10 items-center justify-center rounded-md bg-nav-ink-active text-[15px] font-extrabold tracking-tight text-navy">
+        R
+      </span>
+      <div>
+        <div className="text-base leading-5 font-extrabold tracking-tight text-nav-ink-active">{APP_NAME}</div>
+        <div className="text-xs leading-4 font-semibold text-nav-ink">{subtitle}</div>
+      </div>
     </div>
   )
 }

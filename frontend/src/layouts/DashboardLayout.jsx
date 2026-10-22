@@ -1,70 +1,53 @@
 import { useState } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
-import { Icon } from '../components/ui/Icon'
 import { useAuth } from '../hooks/useAuth'
-import { ROLE_LABELS } from '../utils/format'
 import { Sidebar } from './Sidebar'
+import { Topbar } from './Topbar'
 
-/** Casca das telas autenticadas: barra lateral, cabeçalho com o usuário e área de conteúdo. */
+/**
+ * Casca das telas autenticadas: barra lateral, barra superior e conteúdo.
+ * A busca da barra superior é compartilhada com as páginas via contexto do Outlet.
+ */
 export function DashboardLayout() {
-  const { user, logout } = useAuth()
-  // No mobile, o menu se fecha pelo clique em um item (onNavigate) ou no fundo escurecido.
+  const { user } = useAuth()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [search, setSearch] = useState('')
+
+  function handleSearchChange(value) {
+    setSearch(value)
+    // A busca atua sobre a carteira; digitar em outra tela leva até ela.
+    if (location.pathname !== '/') navigate('/')
+  }
 
   return (
-    <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
-      {/* Barra lateral fixa (desktop) */}
-      <aside className="hidden border-r border-line bg-white lg:block">
-        <div className="sticky top-0">
+    <div className="min-h-screen lg:grid lg:grid-cols-[264px_1fr]">
+      <aside className="hidden bg-navy lg:block">
+        <div className="sticky top-0 h-screen">
           <Sidebar role={user.role} />
         </div>
       </aside>
 
-      {/* Gaveta lateral (mobile) */}
       {menuOpen && (
         <div className="fixed inset-0 z-40 lg:hidden">
           <button
             type="button"
-            className="absolute inset-0 bg-ink/30"
+            className="absolute inset-0 bg-ink/40"
             aria-label="Fechar menu"
             onClick={() => setMenuOpen(false)}
           />
-          <aside className="relative h-full w-64 bg-white shadow-xl">
+          <aside className="relative h-full w-[264px] shadow-raised">
             <Sidebar role={user.role} onNavigate={() => setMenuOpen(false)} />
           </aside>
         </div>
       )}
 
       <div className="flex min-w-0 flex-col">
-        <header className="flex items-center gap-3 border-b border-line bg-white px-4 py-3 sm:px-8">
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            className="-ml-1 rounded-md p-1.5 text-subink hover:bg-canvas lg:hidden"
-            aria-label="Abrir menu"
-          >
-            <Icon name="menu" className="size-5" />
-          </button>
-
-          <div className="ml-auto flex min-w-0 items-center gap-3">
-            <div className="min-w-0 text-right">
-              <p className="truncate text-[13px] font-medium text-ink">{user.email}</p>
-              <p className="text-xs text-subink">{ROLE_LABELS[user.role] ?? user.role}</p>
-            </div>
-            <button
-              type="button"
-              onClick={logout}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line px-3 py-1.5 text-[13px] text-subink transition-colors hover:bg-canvas hover:text-ink"
-            >
-              <Icon name="logout" />
-              <span className="hidden sm:inline">Sair</span>
-            </button>
-          </div>
-        </header>
-
-        <main className="flex-1 px-4 py-7 sm:px-8 lg:px-9">
-          <Outlet />
+        <Topbar search={search} onSearchChange={handleSearchChange} onOpenMenu={() => setMenuOpen(true)} />
+        <main className="flex flex-1 flex-col gap-6 px-4 pt-8 pb-10 sm:px-6 lg:px-10">
+          <Outlet context={{ search, setSearch }} />
         </main>
       </div>
     </div>

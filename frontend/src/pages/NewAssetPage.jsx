@@ -22,10 +22,16 @@ const INITIAL_FORM = {
 
 const REQUIRED_FIELDS = {
   title: 'Informe o título do ativo.',
-  process_number: 'Informe o código do processo.',
+  process_number: 'Informe o número do processo.',
   deposit_date: 'Informe a data de depósito.',
   authors: 'Informe ao menos um inventor/autor.',
 }
+
+const HOW_IT_WORKS = [
+  'Validamos os dados e se o número do processo já está na carteira.',
+  'O ativo entra na carteira do NIT e, se houver autor vinculado, aparece em “Meus ativos” dele.',
+  'Com a coleta automática da RPI (próxima etapa), cada despacho do processo vira alerta.',
+]
 
 /** Validação rápida no navegador; as regras definitivas ficam na API. */
 function validate(form) {
@@ -65,7 +71,10 @@ export function NewAssetPage() {
 
     const errors = validate(form)
     setFieldErrors(errors)
-    if (Object.keys(errors).length > 0) return
+    if (Object.keys(errors).length > 0) {
+      setFormError('Revise os campos destacados.')
+      return
+    }
 
     setSubmitting(true)
     try {
@@ -76,8 +85,10 @@ export function NewAssetPage() {
       // 422 de validação vem com erros por campo.
       if (err.status === 409) {
         setFieldErrors({ process_number: err.message })
+        setFormError('Este número de processo já está na carteira.')
       } else if (err.status === 422 && err.message.includes('AUTOR')) {
         setFieldErrors({ author_email: err.message })
+        setFormError('Não encontramos o autor informado.')
       } else {
         setFieldErrors(err.fieldErrors ?? {})
         setFormError(err.message)
@@ -86,67 +97,96 @@ export function NewAssetPage() {
     }
   }
 
-  return (
+  const actions = (
     <>
+      <Button as={Link} to="/">
+        Cancelar
+      </Button>
+      <Button type="submit" variant="primary" icon="check" loading={submitting}>
+        {submitting ? 'Salvando…' : 'Salvar ativo'}
+      </Button>
+    </>
+  )
+
+  return (
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <PageHeader
-        title="Cadastrar novo ativo"
-        subtitle="Informe os dados do processo para começar a monitorá-lo automaticamente"
+        eyebrow="Carteira · novo ativo"
+        title="Cadastrar ativo"
+        subtitle="Informe os dados do processo depositado no INPI para começar o acompanhamento."
+        actions={actions}
       />
 
-      <Card className="max-w-3xl p-5 sm:p-6">
-        <form onSubmit={handleSubmit} noValidate>
-          {formError && (
-            <Alert tone="error" className="mb-5">
-              {formError}
-            </Alert>
-          )}
+      {formError && <Alert tone="error">{formError}</Alert>}
 
-          <div className="grid gap-4 sm:grid-cols-2">
-            <TextField
-              label="Título"
-              placeholder="Ex.: Sistema de irrigação automatizada por sensores"
-              className="sm:col-span-2"
-              maxLength={500}
-              autoFocus
-              {...bind('title')}
-            />
-            <SelectField label="Natureza do ativo" options={ASSET_TYPES} {...bind('asset_type')} />
-            <TextField
-              label="Código do processo"
-              placeholder="BR 10 2023 001234-5"
-              hint="Número do processo no INPI"
-              maxLength={50}
-              {...bind('process_number')}
-            />
-            <TextField label="Data de depósito" type="date" max={todayIso()} {...bind('deposit_date')} />
-            <SelectField label="Situação atual" options={ASSET_STATUSES} {...bind('status')} />
-            <TextField
-              label="Inventores / Autores"
-              placeholder="Nomes separados por vírgula"
-              className="sm:col-span-2"
-              maxLength={1000}
-              {...bind('authors')}
-            />
-            <TextField
-              label="Vincular autor com acesso de acompanhamento (opcional)"
-              type="email"
-              placeholder="autor@instituicao.edu.br"
-              hint="O autor precisa ter uma conta com perfil AUTOR. Ele verá este processo em “Meus processos”."
-              className="sm:col-span-2"
-              {...bind('author_email')}
-            />
-          </div>
+      <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex flex-col gap-5">
+          <Card title="Identificação">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <SelectField label="Natureza do ativo" required options={ASSET_TYPES} {...bind('asset_type')} />
+              <TextField
+                label="Número do processo"
+                required
+                mono
+                placeholder="BR 10 2026 000000-0"
+                hint="Formato do INPI, com espaços."
+                maxLength={50}
+                {...bind('process_number')}
+              />
+              <TextField
+                label="Título"
+                required
+                placeholder="Ex.: Kit didático de robótica para o ensino médio"
+                className="sm:col-span-2"
+                maxLength={500}
+                {...bind('title')}
+              />
+              <TextField label="Data de depósito" required type="date" max={todayIso()} {...bind('deposit_date')} />
+              <SelectField label="Situação atual" required options={ASSET_STATUSES} {...bind('status')} />
+            </div>
+          </Card>
 
-          <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-line pt-5">
-            <Button type="submit" loading={submitting}>
-              {submitting ? 'Salvando…' : 'Salvar ativo'}
-            </Button>
-            <Link to="/" className="rounded-lg px-3 py-2.5 text-sm font-medium text-subink hover:bg-canvas hover:text-ink">
-              Cancelar
-            </Link>
-          </div>
-        </form>
-      </Card>
-    </>
+          <Card title="Inventores / autores">
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+              <TextField
+                label="Inventores / autores"
+                required
+                placeholder="Nomes completos, separados por vírgula"
+                className="sm:col-span-2"
+                maxLength={1000}
+                {...bind('authors')}
+              />
+              <TextField
+                label="Autor com acesso de acompanhamento"
+                type="email"
+                icon="email"
+                placeholder="nome@instituicao.edu.br"
+                hint="Opcional. O e-mail precisa ser de uma conta com perfil AUTOR."
+                className="sm:col-span-2"
+                {...bind('author_email')}
+              />
+            </div>
+          </Card>
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <Card title="Como funciona">
+            <ol className="flex flex-col">
+              {HOW_IT_WORKS.map((step, index) => (
+                <li key={step} className="flex items-start gap-3 border-t border-line py-3 first:border-t-0 first:pt-0">
+                  <span className="flex size-7 flex-none items-center justify-center rounded-full bg-primary-soft type-caption font-bold text-primary-ink">
+                    {index + 1}
+                  </span>
+                  <span className="type-body-sm text-ink">{step}</span>
+                </li>
+              ))}
+            </ol>
+          </Card>
+        </div>
+      </div>
+
+      {/* No celular, repete as ações ao fim do formulário para evitar rolar de volta ao topo. */}
+      <div className="flex flex-wrap justify-end gap-2 sm:hidden">{actions}</div>
+    </form>
   )
 }

@@ -1,23 +1,31 @@
 import { useEffect, useState } from 'react'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom'
 
 import { AssetTable } from '../components/AssetTable'
-import { KpiCard } from '../components/KpiCard'
+import { ListState } from '../components/ListState'
 import { PageHeader } from '../components/PageHeader'
+import { StatCard } from '../components/StatCard'
 import { Alert } from '../components/ui/Alert'
 import { Button } from '../components/ui/Button'
 import { Card } from '../components/ui/Card'
-import { Icon } from '../components/ui/Icon'
-import { Spinner } from '../components/ui/Spinner'
+import { Chip } from '../components/ui/Chip'
+import { Tabs } from '../components/ui/Tabs'
 import { useAssets } from '../hooks/useAssets'
-import { useAuth } from '../hooks/useAuth'
-import { summarizeAssets } from '../utils/assets'
+import { isConcluded, matchesSearch, needsAction, summarizeAssets } from '../utils/assets'
 
-/** Carteira de ativos: painel do NIT (US06) ou "Meus processos" do autor (US03). */
+const TAB_FILTERS = {
+  todos: () => true,
+  acao: needsAction,
+  tramitacao: (asset) => !needsAction(asset) && !isConcluded(asset),
+  concluidos: isConcluded,
+}
+
+/** Carteira de ativos do NIT (US06): indicadores, filtros e tabela. */
 export function PortfolioPage() {
-  const { user } = useAuth()
-  const isNit = user.role === 'NIT'
   const { assets, loading, error, reload } = useAssets()
+  const { search, setSearch } = useOutletContext()
+  const [tab, setTab] = useState('todos')
+  const [types, setTypes] = useState({ Patente: true, 'Programa de Computador': true })
 
   // Mensagem enviada pelo formulário de cadastro após salvar.
   const location = useLocation()
@@ -29,87 +37,125 @@ export function PortfolioPage() {
   }, [location, navigate])
 
   const summary = summarizeAssets(assets)
+  const byType = assets.filter((asset) => types[asset.asset_type] !== false)
+  const visible = byType.filter(TAB_FILTERS[tab]).filter((asset) => matchesSearch(asset, search))
+  const countTab = (id) => byType.filter(TAB_FILTERS[id]).length
+  const percent = (part) => (summary.total ? `${Math.round((part / summary.total) * 100)}% da carteira` : '—')
 
   return (
     <>
       <PageHeader
-        title={isNit ? 'Carteira de ativos' : 'Meus processos'}
-        subtitle={
-          isNit
-            ? 'Visão consolidada dos processos acompanhados pelo NIT'
-            : 'Acompanhamento restrito aos processos em que você é inventor/autor'
-        }
+        eyebrow="Carteira"
+        title="Ativos da universidade"
+        subtitle={loading ? 'Carregando a carteira…' : `${summary.total} ${summary.total === 1 ? 'ativo monitorado' : 'ativos monitorados'} junto ao INPI`}
         actions={
-          isNit && (
-            <Link
-              to="/ativos/novo"
-              className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2.5 text-sm font-semibold text-white hover:bg-navy-dark"
-            >
-              <Icon name="plus" />
-              Novo ativo
-            </Link>
-          )
+          <Button as={Link} to="/ativos/novo" variant="primary" icon="mais">
+            Novo ativo
+          </Button>
         }
       />
 
       {flash && (
-        <Alert tone="success" onClose={() => setFlash(null)} className="mb-5">
-          Ativo <strong className="font-semibold">{flash}</strong> cadastrado com sucesso.
+        <Alert tone="success" onClose={() => setFlash(null)}>
+          Ativo <strong className="font-bold">{flash}</strong> cadastrado com sucesso.
         </Alert>
       )}
 
-      {isNit && (
-        <section aria-label="Resumo da carteira" className="mb-6 grid grid-cols-2 gap-3.5 lg:grid-cols-4">
-          <KpiCard label="Ativos cadastrados" value={summary.total} loading={loading} />
-          <KpiCard label="Patentes" value={summary.patents} loading={loading} />
-          <KpiCard label="Programas de computador" value={summary.software} loading={loading} />
-          <KpiCard label="Em exigência" value={summary.needsAction} tone="action" loading={loading} />
-        </section>
-      )}
+      <section aria-label="Resumo da carteira" className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard
+          label="Ativos monitorados"
+          tone="primary"
+          icon="carteira"
+          value={summary.total}
+          delta={`${summary.concluded} ${summary.concluded === 1 ? 'concluído' : 'concluídos'}`}
+          loading={loading}
+        />
+        <StatCard label="Patentes" tone="info" icon="invencao" value={summary.patents} delta={percent(summary.patents)} loading={loading} />
+        <StatCard
+          label="Programas de computador"
+          tone="info"
+          icon="software"
+          value={summary.software}
+          delta={percent(summary.software)}
+          loading={loading}
+        />
+        <StatCard
+          label="Exigem ação"
+          tone={summary.needsAction ? 'warning' : 'success'}
+          icon={summary.needsAction ? 'alerta' : 'ok'}
+          value={summary.needsAction}
+          delta={summary.needsAction ? 'Exigência ou indeferimento' : 'Nenhuma pendência'}
+          deltaTone={summary.needsAction ? 'warning' : 'success'}
+          loading={loading}
+        />
+      </section>
 
-      <Card className="p-2 sm:p-3">
-        {loading ? (
-          <div className="flex justify-center py-14">
-            <Spinner label="Carregando ativos…" />
+      <Card flush>
+        <div className="flex flex-wrap items-center gap-3 px-6 pt-1 pb-4">
+          <Tabs
+            label="Filtrar por situação"
+            active={tab}
+            onChange={setTab}
+            items={[
+              { id: 'todos', label: 'Todos', count: countTab('todos') },
+              { id: 'acao', label: 'Exigem ação', count: countTab('acao') },
+              { id: 'tramitacao', label: 'Em tramitação', count: countTab('tramitacao') },
+              { id: 'concluidos', label: 'Concluídos', count: countTab('concluidos') },
+            ]}
+          />
+          <span className="hidden flex-1 lg:block" />
+          <div className="flex flex-wrap gap-2">
+            <Chip on={types.Patente} onChange={(on) => setTypes((t) => ({ ...t, Patente: on }))}>
+              Patente
+            </Chip>
+            <Chip
+              on={types['Programa de Computador']}
+              onChange={(on) => setTypes((t) => ({ ...t, 'Programa de Computador': on }))}
+            >
+              Programa de computador
+            </Chip>
           </div>
-        ) : error ? (
-          <div className="flex flex-col items-center gap-3 px-4 py-12 text-center">
-            <p className="text-sm text-danger">{error}</p>
-            <Button variant="secondary" onClick={reload}>
-              <Icon name="refresh" />
-              Tentar novamente
+        </div>
+
+        {search && (
+          <div className="flex flex-wrap items-center gap-3 px-6 pb-3">
+            <span className="type-body-sm text-ink-muted">Filtrando por “{search}”</span>
+            <Button size="sm" variant="ghost" icon="fechar" onClick={() => setSearch('')}>
+              Limpar busca
             </Button>
           </div>
-        ) : assets.length === 0 ? (
-          <EmptyState isNit={isNit} />
+        )}
+
+        {loading || error || visible.length === 0 ? (
+          <ListState
+            loading={loading}
+            error={error}
+            onRetry={reload}
+            empty={
+              assets.length === 0
+                ? {
+                    icon: 'carteira',
+                    title: 'Nenhum ativo cadastrado ainda',
+                    description: 'Cadastre o primeiro processo para começar o acompanhamento.',
+                    action: (
+                      <Button as={Link} to="/ativos/novo" size="sm" variant="primary" icon="mais">
+                        Cadastrar ativo
+                      </Button>
+                    ),
+                  }
+                : { title: 'Nenhum ativo encontrado', description: 'Revise os filtros ou a busca.' }
+            }
+          />
         ) : (
-          <AssetTable assets={assets} compact={!isNit} />
+          <AssetTable assets={visible} />
+        )}
+
+        {!loading && !error && assets.length > 0 && (
+          <p className="px-6 pt-4 pb-1 type-body-sm text-ink-muted">
+            Mostrando {visible.length} de {assets.length}
+          </p>
         )}
       </Card>
-
-      {!isNit && (
-        <p className="mt-4 rounded-lg bg-navy-light px-4 py-3 text-[13px] text-navy-dark">
-          Este perfil tem apenas visualização — o cadastro e a edição de ativos são feitos pela equipe do NIT.
-        </p>
-      )}
     </>
-  )
-}
-
-function EmptyState({ isNit }) {
-  return (
-    <div className="px-4 py-14 text-center">
-      <p className="font-medium text-ink">{isNit ? 'Nenhum ativo cadastrado ainda' : 'Nenhum processo vinculado a você'}</p>
-      <p className="mx-auto mt-1 max-w-sm text-sm text-subink">
-        {isNit
-          ? 'Cadastre o primeiro processo para começar o acompanhamento.'
-          : 'Quando a equipe do NIT vincular seu e-mail a um processo, ele aparecerá aqui.'}
-      </p>
-      {isNit && (
-        <Link to="/ativos/novo" className="mt-4 inline-block text-sm font-semibold text-navy hover:underline">
-          Cadastrar ativo
-        </Link>
-      )}
-    </div>
   )
 }

@@ -1,0 +1,1177 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar INPI — protótipo navegável</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root, [data-theme="light"] { --canvas: #f4f6fa;--surface: #ffffff;--surface-muted: #eef2f8;--line: #e2e7ef;--line-strong: #8592a8;--ink: #0e1a33;--ink-muted: #475670;--ink-subtle: #5f6c84;--navy: #0f2557;--navy-active: #21428a;--nav-ink: #b9c7e6;--nav-ink-active: #ffffff;--primary: #1d3f91;--primary-hover: #163274;--on-primary: #ffffff;--primary-soft: #e7edfb;--primary-ink: #1d3f91;--accent: #2b6cc4;--focus-ring: #2b6cc4;--critical: #b42332;--critical-soft: #fcebed;--warning: #8f4d0a;--warning-soft: #fcf1e2;--info: #0d6573;--info-soft: #e2f3f5;--success: #1b7340;--success-soft: #e5f3ea;--shadow-card: 0 1px 2px rgba(14,26,51,0.05), 0 2px 8px rgba(14,26,51,0.04);--shadow-raised: 0 8px 24px rgba(14,26,51,0.10), 0 2px 6px rgba(14,26,51,0.06); }
+[data-theme="dark"] { --canvas: #0a1120;--surface: #111a2c;--surface-muted: #17223a;--line: #222d45;--line-strong: #5d6c8a;--ink: #e9eef7;--ink-muted: #aab7cd;--ink-subtle: #919fb8;--navy: #0f1d3d;--navy-active: #213a70;--nav-ink: #9fb0d4;--nav-ink-active: #ffffff;--primary: #8db0ff;--primary-hover: #a8c3ff;--on-primary: #0a1633;--primary-soft: #1b2d55;--primary-ink: #b4caff;--accent: #77a8f2;--focus-ring: #8db0ff;--critical: #ff8f93;--critical-soft: #3b161b;--warning: #f0b46e;--warning-soft: #33240f;--info: #6cc9d6;--info-soft: #0f2d33;--success: #79d39f;--success-soft: #11291c;--shadow-card: 0 1px 2px rgba(0,0,0,0.4);--shadow-raised: 0 8px 24px rgba(0,0,0,0.5); }
+:root { --space-1: 4px;--space-2: 8px;--space-3: 12px;--space-4: 16px;--space-5: 20px;--space-6: 24px;--space-8: 32px;--space-10: 40px;--radius-sm: 8px;--radius-md: 12px;--radius-lg: 18px;--radius-xl: 24px;--radius-pill: 999px;--font-sans: "Manrope", "Segoe UI", system-ui, sans-serif;--font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", monospace; }
+.display { font-family: var(--font-sans); font-size: 36px; line-height: 42px; font-weight: 700; letter-spacing: -0.02em; }
+.title { font-family: var(--font-sans); font-size: 26px; line-height: 32px; font-weight: 700; letter-spacing: -0.015em; }
+.heading { font-family: var(--font-sans); font-size: 18px; line-height: 26px; font-weight: 700; letter-spacing: -0.01em; }
+.kpi { font-family: var(--font-sans); font-size: 34px; line-height: 40px; font-weight: 700; letter-spacing: -0.02em; }
+.eyebrow { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.1em; }
+.body { font-family: var(--font-sans); font-size: 15px; line-height: 22px; font-weight: 500; }
+.body-sm { font-family: var(--font-sans); font-size: 13px; line-height: 20px; font-weight: 500; }
+.label { font-family: var(--font-sans); font-size: 13px; line-height: 18px; font-weight: 700; }
+.caption { font-family: var(--font-sans); font-size: 12px; line-height: 16px; font-weight: 600; }
+.process { font-family: var(--font-mono); font-size: 13px; line-height: 20px; font-weight: 500; }
+</style>
+<style>
+
+
+/* Radar INPI — component styles. Every colour, space, radius and shadow is a token from tokens.json. */
+body { margin: 0; font-family: var(--font-sans); background: var(--canvas); color: var(--ink); -webkit-font-smoothing: antialiased; font-feature-settings: "tnum" 1; }
+*, *::before, *::after { box-sizing: border-box; }
+.rp-pad { padding: var(--space-6); }
+.rp-row { display: flex; gap: var(--space-3); align-items: center; flex-wrap: wrap; }
+.rp-stack { display: flex; flex-direction: column; gap: var(--space-3); }
+.rp-mono, .process { font-family: var(--font-mono); font-feature-settings: "tnum" 1; }
+.rp-muted { color: var(--ink-muted); }
+.rp-subtle { color: var(--ink-subtle); }
+:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 2px; }
+
+/* Icon */
+.rp-icon { display: inline-block; flex: none; vertical-align: middle; stroke: currentColor; fill: none; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Button */
+.rp-btn { font: inherit; font-size: 14px; font-weight: 700; line-height: 20px; display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: 42px; padding: 0 var(--space-5); border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; white-space: nowrap; transition: background .15s, border-color .15s; }
+.rp-btn:hover { background: var(--surface-muted); }
+.rp-btn-primary { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.rp-btn-primary:hover { background: var(--primary-hover); border-color: var(--primary-hover); }
+.rp-btn-ghost { background: transparent; border-color: transparent; color: var(--primary-ink); }
+.rp-btn-ghost:hover { background: var(--primary-soft); }
+.rp-btn-danger { background: var(--surface); border-color: var(--line); color: var(--critical); }
+.rp-btn-danger:hover { background: var(--critical-soft); }
+.rp-btn-sm { height: 34px; padding: 0 var(--space-3); font-size: 13px; border-radius: var(--radius-sm); }
+.rp-btn[disabled] { opacity: .5; cursor: not-allowed; }
+.rp-iconbtn { position: relative; width: 42px; height: 42px; padding: 0; border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--surface); color: var(--ink-muted); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.rp-iconbtn:hover { background: var(--surface-muted); color: var(--ink); }
+.rp-iconbtn-dot { position: absolute; top: 8px; right: 9px; width: 9px; height: 9px; border-radius: var(--radius-pill); background: var(--critical); box-shadow: 0 0 0 2px var(--surface); }
+
+/* Badge */
+.rp-badge { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: var(--radius-pill); font-size: 12px; line-height: 16px; font-weight: 700; white-space: nowrap; background: var(--surface-muted); color: var(--ink-muted); }
+.rp-badge-dot::before { content: ""; width: 7px; height: 7px; border-radius: var(--radius-pill); background: currentColor; }
+.rp-badge-primary { background: var(--primary-soft); color: var(--primary-ink); }
+.rp-badge-critical { background: var(--critical-soft); color: var(--critical); }
+.rp-badge-warning { background: var(--warning-soft); color: var(--warning); }
+.rp-badge-info { background: var(--info-soft); color: var(--info); }
+.rp-badge-success { background: var(--success-soft); color: var(--success); }
+.rp-code { display: inline-flex; align-items: center; height: 24px; padding: 0 8px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-muted); font-family: var(--font-mono); font-size: 12px; font-weight: 600; color: var(--ink); white-space: nowrap; }
+
+/* Avatar */
+.rp-avatar { display: inline-flex; align-items: center; justify-content: center; flex: none; border-radius: var(--radius-pill); background: var(--primary); color: var(--on-primary); font-weight: 700; letter-spacing: .02em; }
+
+/* Card */
+.rp-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); min-width: 0; }
+.rp-card-head { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-5) var(--space-6) 0; }
+.rp-card-head h2 { margin: 0; flex: 1; color: var(--ink); }
+.rp-card-body { padding: var(--space-5) var(--space-6) var(--space-6); }
+.rp-card-flush { padding: var(--space-4) 0 var(--space-2); }
+
+/* StatCard */
+.rp-stat { padding: var(--space-5) var(--space-6) var(--space-6); display: flex; flex-direction: column; gap: var(--space-3); }
+.rp-stat-top { display: flex; align-items: center; justify-content: space-between; color: var(--ink-subtle); }
+.rp-stat-value { margin: 0; color: var(--ink); }
+.rp-stat-delta { font-size: 13px; line-height: 18px; font-weight: 600; color: var(--ink-muted); }
+.rp-stat-delta.is-critical { color: var(--critical); } .rp-stat-delta.is-success { color: var(--success); } .rp-stat-delta.is-warning { color: var(--warning); }
+
+/* Fields */
+.rp-field { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rp-field-label { color: var(--ink); }
+.rp-field-label .req { color: var(--critical); margin-left: 2px; }
+.rp-field-hint { font-size: 12px; line-height: 16px; color: var(--ink-subtle); }
+.rp-field-error .rp-field-hint { color: var(--critical); }
+.rp-input { display: flex; align-items: center; gap: var(--space-2); height: 44px; padding: 0 var(--space-4); border: 1px solid var(--line-strong); border-radius: var(--radius-sm); background: var(--surface); color: var(--ink-subtle); }
+.rp-input:focus-within { border-color: var(--focus-ring); box-shadow: 0 0 0 3px var(--primary-soft); }
+.rp-field-error .rp-input { border-color: var(--critical); }
+.rp-input input, .rp-input select, .rp-input textarea { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; font: inherit; font-size: 14px; font-weight: 500; color: var(--ink); appearance: none; }
+.rp-input input::placeholder, .rp-input textarea::placeholder { color: var(--ink-subtle); }
+.rp-input-mono input { font-family: var(--font-mono); font-size: 13px; }
+.rp-input-area { height: auto; padding: var(--space-3) var(--space-4); align-items: flex-start; }
+.rp-input-area textarea { resize: none; min-height: 72px; line-height: 22px; }
+.rp-search { width: 100%; max-width: 480px; height: 44px; border-color: var(--line); border-radius: var(--radius-md); background: var(--canvas); }
+.rp-kbd { font-family: var(--font-mono); font-size: 11px; padding: 2px 6px; border-radius: 6px; border: 1px solid var(--line); color: var(--ink-subtle); background: var(--surface); }
+
+/* Toggle */
+.rp-toggle { display: inline-flex; align-items: center; gap: var(--space-3); cursor: pointer; font-size: 14px; font-weight: 600; color: var(--ink); }
+.rp-toggle-track { position: relative; width: 40px; height: 24px; border-radius: var(--radius-pill); background: var(--line-strong); transition: background .15s; flex: none; }
+.rp-toggle-track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: var(--radius-pill); background: var(--surface); transition: transform .15s; }
+.rp-toggle.is-on .rp-toggle-track { background: var(--primary); }
+.rp-toggle.is-on .rp-toggle-track::after { transform: translateX(16px); }
+
+/* Tabs */
+.rp-tabs { display: inline-flex; gap: 4px; padding: 4px; border-radius: var(--radius-md); background: var(--surface-muted); }
+.rp-tab { font: inherit; font-size: 13px; font-weight: 700; height: 34px; padding: 0 var(--space-4); border: 0; border-radius: var(--radius-sm); background: transparent; color: var(--ink-muted); cursor: pointer; display: inline-flex; align-items: center; gap: var(--space-2); }
+.rp-tab.is-active { background: var(--surface); color: var(--primary-ink); box-shadow: var(--shadow-card); }
+.rp-tab-count { font-size: 11px; padding: 1px 7px; border-radius: var(--radius-pill); background: var(--line); color: var(--ink-muted); }
+.rp-tab.is-active .rp-tab-count { background: var(--primary-soft); color: var(--primary-ink); }
+
+/* Chips (filters) */
+.rp-chip { font: inherit; font-size: 13px; font-weight: 600; height: 34px; padding: 0 var(--space-3); border-radius: var(--radius-pill); border: 1px solid var(--line); background: var(--surface); color: var(--ink-muted); display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.rp-chip.is-on { background: var(--primary-soft); border-color: transparent; color: var(--primary-ink); }
+
+/* Sidebar */
+.rp-shell { display: grid; grid-template-columns: 264px 1fr; min-height: 100vh; background: var(--canvas); }
+.rp-side { background: var(--navy); color: var(--nav-ink); display: flex; flex-direction: column; padding: var(--space-5) var(--space-4); gap: var(--space-2); }
+.rp-brand { display: flex; align-items: center; gap: var(--space-3); padding: 0 var(--space-2) var(--space-5); }
+.rp-brand-mark { width: 40px; height: 40px; border-radius: var(--radius-md); background: var(--nav-ink-active); color: var(--navy); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 15px; letter-spacing: -.02em; }
+.rp-brand-name { color: var(--nav-ink-active); font-weight: 800; font-size: 16px; line-height: 20px; letter-spacing: -.01em; }
+.rp-brand-sub { color: var(--nav-ink); font-size: 12px; line-height: 16px; font-weight: 600; }
+.rp-side-label { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--nav-ink); opacity: .85; padding: var(--space-4) var(--space-3) var(--space-1); }
+.rp-nav { display: flex; align-items: center; gap: var(--space-3); height: 44px; padding: 0 var(--space-3); border-radius: var(--radius-md); color: var(--nav-ink); font-size: 14px; font-weight: 600; text-decoration: none; cursor: pointer; }
+.rp-nav:hover { background: var(--navy-active); color: var(--nav-ink-active); }
+.rp-nav.is-active { background: var(--navy-active); color: var(--nav-ink-active); }
+.rp-nav-count { margin-left: auto; min-width: 22px; height: 22px; padding: 0 7px; border-radius: var(--radius-pill); background: var(--nav-ink-active); color: var(--navy); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; }
+.rp-side-foot { margin-top: auto; padding: var(--space-4); border-radius: var(--radius-lg); background: var(--navy-active); color: var(--nav-ink); font-size: 12px; line-height: 18px; font-weight: 600; }
+.rp-side-foot strong { display: block; color: var(--nav-ink-active); font-size: 13px; margin-bottom: 2px; }
+
+/* Topbar */
+.rp-main { display: flex; flex-direction: column; min-width: 0; }
+.rp-top { display: flex; align-items: center; gap: var(--space-3); height: 76px; padding: 0 var(--space-10); background: var(--surface); border-bottom: 1px solid var(--line); }
+.rp-top-spacer { flex: 1; }
+.rp-user { display: flex; align-items: center; gap: var(--space-3); padding: 4px var(--space-3) 4px 4px; border: 1px solid var(--line); border-radius: var(--radius-pill); }
+.rp-user-name { font-size: 14px; font-weight: 700; line-height: 18px; color: var(--ink); }
+.rp-user-role { font-size: 12px; font-weight: 600; line-height: 16px; color: var(--ink-subtle); }
+.rp-content { padding: var(--space-8) var(--space-10) var(--space-10); display: flex; flex-direction: column; gap: var(--space-6); }
+
+/* PageHeader */
+.rp-ph { display: flex; align-items: flex-end; gap: var(--space-5); }
+.rp-ph-text { flex: 1; min-width: 0; }
+.rp-ph-eyebrow { color: var(--primary-ink); text-transform: uppercase; margin: 0 0 var(--space-2); }
+.rp-ph-title { margin: 0; color: var(--ink); }
+.rp-ph-sub { margin: var(--space-2) 0 0; color: var(--ink-muted); }
+.rp-ph-actions { display: flex; gap: var(--space-2); flex: none; }
+
+/* AlertItem */
+.rp-alert { display: grid; grid-template-columns: 40px 1fr auto; gap: var(--space-4); align-items: start; padding: var(--space-4) var(--space-6); border-top: 1px solid var(--line); }
+.rp-alert:first-child { border-top: 0; }
+.rp-alert.is-clickable, .rp-table tr.is-clickable { cursor: pointer; }
+.rp-alert.is-clickable:hover { background: var(--surface-muted); }
+.rp-alert.is-unread { background: color-mix(in srgb, var(--primary-soft) 45%, transparent); }
+.rp-alert-icon { width: 40px; height: 40px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; background: var(--surface-muted); color: var(--ink-muted); }
+.rp-alert-icon.t-critical { background: var(--critical-soft); color: var(--critical); }
+.rp-alert-icon.t-warning { background: var(--warning-soft); color: var(--warning); }
+.rp-alert-icon.t-info { background: var(--info-soft); color: var(--info); }
+.rp-alert-icon.t-success { background: var(--success-soft); color: var(--success); }
+.rp-alert-icon.t-primary { background: var(--primary-soft); color: var(--primary-ink); }
+.rp-alert-title { margin: 0; color: var(--ink); display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.rp-alert-meta { margin: 4px 0 0; color: var(--ink-muted); }
+.rp-alert-side { display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.rp-unread-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--primary); }
+
+/* Timeline */
+.rp-tl { list-style: none; margin: 0; padding: 0; position: relative; }
+.rp-tl-item { position: relative; display: grid; grid-template-columns: 96px 28px 1fr; gap: 0 var(--space-3); padding-bottom: var(--space-6); }
+.rp-tl-item:last-child { padding-bottom: 0; }
+.rp-tl-date { text-align: right; padding-top: 2px; }
+.rp-tl-date b { display: block; font-size: 13px; font-weight: 700; color: var(--ink); line-height: 18px; }
+.rp-tl-date span { font-family: var(--font-mono); font-size: 12px; color: var(--ink-subtle); }
+.rp-tl-rail { position: relative; display: flex; justify-content: center; }
+.rp-tl-rail::after { content: ""; position: absolute; top: 24px; bottom: calc(-1 * var(--space-6)); width: 2px; background: var(--line); border-radius: 2px; }
+.rp-tl-item:last-child .rp-tl-rail::after { display: none; }
+.rp-tl-node { position: relative; z-index: 1; width: 22px; height: 22px; border-radius: var(--radius-pill); background: var(--surface); border: 2px solid var(--line-strong); display: flex; align-items: center; justify-content: center; margin-top: 1px; }
+.rp-tl-node::after { content: ""; width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--line-strong); }
+.rp-tl-node.t-critical { border-color: var(--critical); } .rp-tl-node.t-critical::after { background: var(--critical); }
+.rp-tl-node.t-warning { border-color: var(--warning); } .rp-tl-node.t-warning::after { background: var(--warning); }
+.rp-tl-node.t-info { border-color: var(--info); } .rp-tl-node.t-info::after { background: var(--info); }
+.rp-tl-node.t-success { border-color: var(--success); } .rp-tl-node.t-success::after { background: var(--success); }
+.rp-tl-node.t-primary { border-color: var(--primary); } .rp-tl-node.t-primary::after { background: var(--primary); }
+.rp-tl-body { min-width: 0; }
+.rp-tl-title { margin: 0; display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; color: var(--ink); }
+.rp-tl-desc { margin: 6px 0 0; color: var(--ink-muted); }
+.rp-tl-deadline { margin-top: var(--space-3); display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-md); background: var(--warning-soft); color: var(--warning); font-size: 13px; font-weight: 600; }
+.rp-tl-deadline.is-critical { background: var(--critical-soft); color: var(--critical); }
+.rp-tl-deadline.is-done { background: var(--success-soft); color: var(--success); }
+
+/* DataTable */
+.rp-table-wrap { overflow-x: auto; }
+.rp-table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; line-height: 20px; }
+.rp-table th { text-align: left; font-size: 12px; font-weight: 700; letter-spacing: .02em; color: var(--ink-muted); background: var(--surface-muted); padding: var(--space-3) var(--space-4); white-space: nowrap; }
+.rp-table th:first-child { border-radius: var(--radius-sm) 0 0 var(--radius-sm); padding-left: var(--space-6); }
+.rp-table th:last-child { border-radius: 0 var(--radius-sm) var(--radius-sm) 0; padding-right: var(--space-6); }
+.rp-table td { padding: var(--space-4); border-bottom: 1px solid var(--line); color: var(--ink); font-weight: 500; vertical-align: middle; }
+.rp-table td:first-child { padding-left: var(--space-6); }
+.rp-table td:last-child { padding-right: var(--space-6); }
+.rp-table tr:last-child td { border-bottom: 0; }
+.rp-table tbody tr:hover td { background: var(--surface-muted); }
+.rp-table .is-right { text-align: right; }
+.rp-table .rp-mono, .rp-table .rp-badge { white-space: nowrap; }
+.rp-cell-title { font-size: 14px; font-weight: 700; color: var(--ink); }
+.rp-cell-sub { font-size: 12px; color: var(--ink-subtle); }
+.rp-table-tight { margin: 0 var(--space-3); width: calc(100% - 2 * var(--space-3)); }
+
+/* Calendar */
+.rp-cal { display: flex; flex-direction: column; gap: var(--space-4); }
+.rp-cal-head { display: flex; align-items: center; gap: var(--space-3); }
+.rp-cal-head h3 { margin: 0; flex: 1; text-transform: capitalize; color: var(--ink); }
+.rp-cal-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.rp-cal-dow { font-size: 12px; font-weight: 700; color: var(--ink-subtle); text-align: left; padding: 0 var(--space-2) var(--space-1); text-transform: uppercase; letter-spacing: .06em; }
+.rp-cal-day { min-height: 96px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--line); padding: 6px; display: flex; flex-direction: column; gap: 4px; cursor: pointer; }
+.rp-cal-day:hover { border-color: var(--line-strong); }
+.rp-cal-day.is-out { background: var(--surface-muted); border-color: transparent; }
+.rp-cal-day.is-out .rp-cal-num { color: var(--ink-subtle); }
+.rp-cal-day.is-selected { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.rp-cal-num { font-size: 13px; font-weight: 700; color: var(--ink); width: 26px; height: 26px; border-radius: var(--radius-pill); display: inline-flex; align-items: center; justify-content: center; }
+.rp-cal-day.is-today .rp-cal-num { background: var(--primary); color: var(--on-primary); }
+.rp-cal-ev { font-size: 11px; line-height: 15px; font-weight: 700; padding: 3px 6px; border-radius: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; background: var(--surface-muted); color: var(--ink-muted); }
+.rp-cal-ev.t-primary { background: var(--primary-soft); color: var(--primary-ink); }
+.rp-cal-ev.t-critical { background: var(--critical-soft); color: var(--critical); }
+.rp-cal-ev.t-warning { background: var(--warning-soft); color: var(--warning); }
+.rp-cal-ev.t-info { background: var(--info-soft); color: var(--info); }
+.rp-cal-ev.t-success { background: var(--success-soft); color: var(--success); }
+.rp-cal-more { font-size: 11px; font-weight: 700; color: var(--ink-subtle); padding: 0 6px; }
+.rp-cal-compact .rp-cal-day { min-height: 44px; align-items: center; justify-content: flex-start; padding: 4px; }
+.rp-cal-compact .rp-cal-ev { display: none; }
+.rp-cal-dots { display: flex; gap: 3px; }
+.rp-cal-dots i { width: 6px; height: 6px; border-radius: var(--radius-pill); background: var(--ink-subtle); }
+.rp-cal-dots i.t-primary { background: var(--primary); } .rp-cal-dots i.t-critical { background: var(--critical); } .rp-cal-dots i.t-warning { background: var(--warning); } .rp-cal-dots i.t-info { background: var(--info); } .rp-cal-dots i.t-success { background: var(--success); }
+
+/* Meter */
+.rp-meter { height: 8px; border-radius: var(--radius-pill); background: var(--surface-muted); overflow: hidden; }
+.rp-meter > i { display: block; height: 100%; border-radius: var(--radius-pill); background: var(--primary); }
+.rp-meter.t-success > i { background: var(--success); } .rp-meter.t-critical > i { background: var(--critical); } .rp-meter.t-warning > i { background: var(--warning); } .rp-meter.t-info > i { background: var(--info); }
+
+/* Layout helpers for screens */
+.rp-grid { display: grid; gap: var(--space-5); }
+.rp-g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.rp-g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.rp-g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.rp-g-main { grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); }
+.rp-g-side { grid-template-columns: minmax(0, 1fr) 360px; }
+.rp-dl { display: grid; grid-template-columns: 112px 1fr; gap: var(--space-3) var(--space-4); margin: 0; font-size: 14px; line-height: 20px; }
+.rp-dl dt { color: var(--ink-subtle); font-weight: 600; }
+.rp-dl dd { margin: 0; color: var(--ink); font-weight: 600; min-width: 0; }
+.rp-dl dd.rp-mono { font-size: 13px; white-space: nowrap; }
+.rp-divider { height: 1px; background: var(--line); border: 0; margin: 0; }
+.rp-list { list-style: none; margin: 0; padding: 0; }
+.rp-list li { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) 0; border-top: 1px solid var(--line); }
+.rp-list li:first-child { border-top: 0; }
+
+</style>
+<style>
+html, body { min-height: 100%; }
+body { background: var(--canvas); }
+.proto-click { cursor: pointer; border-radius: var(--radius-lg); transition: transform .15s; }
+.proto-click:hover { transform: translateY(-2px); }
+.proto-empty { text-align: center; padding: 48px 24px; color: var(--ink-subtle); }
+.proto-col { background: var(--surface-muted); border-radius: var(--radius-lg); padding: 16px; min-height: 320px; }
+.proto-chart { display: flex; align-items: flex-end; gap: 14px; height: 220px; padding-top: 8px; }
+.proto-bar { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; height: 100%; }
+.proto-bar i { display: block; width: 100%; max-width: 44px; background: var(--primary); border-radius: var(--radius-sm) var(--radius-sm) 4px 4px; }
+.proto-bar:last-child i { background: var(--accent); }
+.proto-menu { position: fixed; top: 72px; right: 40px; z-index: 50; width: 240px; padding: 8px; box-shadow: var(--shadow-raised); }
+.proto-menu-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 40px; padding: 0 12px; border: 0; border-radius: var(--radius-sm); background: transparent; font: inherit; font-size: 14px; font-weight: 600; color: var(--ink); cursor: pointer; text-align: left; }
+.proto-menu-item:hover { background: var(--surface-muted); }
+.proto-menu-item.is-on { background: var(--primary-soft); color: var(--primary-ink); }
+.proto-panel { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: 280px; padding: 16px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-raised); }
+.proto-x { border: 0; background: transparent; color: var(--ink-subtle); cursor: pointer; display: flex; padding: 4px; border-radius: 6px; }
+.proto-x:hover { background: var(--surface-muted); }
+.proto-fab { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: 48px; height: 48px; border-radius: var(--radius-pill); border: 0; background: var(--primary); color: var(--on-primary); box-shadow: var(--shadow-raised); cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.proto-toast { position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 70; display: flex; align-items: center; gap: 10px; padding: 12px 18px; border-radius: var(--radius-md); background: var(--ink); color: var(--surface); font-size: 14px; font-weight: 600; box-shadow: var(--shadow-raised); max-width: 560px; }
+.rp-side { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.3.1/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.3.1/umd/react-dom.production.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<noscript>Este protótipo precisa de JavaScript e de conexão com a internet (React e fontes são carregados de CDN).</noscript>
+<script>
+/* @ds-bundle: {"format":4,"namespace":"RadarINPI","components":[{"name":"Icon"},{"name":"Button"},{"name":"IconButton"},{"name":"Badge"},{"name":"DispatchCode"},{"name":"ProcessNumber"},{"name":"Avatar"},{"name":"Card"},{"name":"StatCard"},{"name":"TextField"},{"name":"Select"},{"name":"SearchField"},{"name":"Toggle"},{"name":"Tabs"},{"name":"Chip"},{"name":"Meter"},{"name":"PageHeader"},{"name":"Sidebar"},{"name":"Topbar"},{"name":"AppShell"},{"name":"AlertItem"},{"name":"Timeline"},{"name":"DataTable"},{"name":"CalendarMonth"}]} */
+(function () {
+  var React = window.React;
+  var h = React.createElement;
+  var F = React.Fragment;
+  function cx() { return Array.prototype.filter.call(arguments, Boolean).join(' '); }
+
+  var PATHS = {
+    painel: 'M5 4h4a1 1 0 0 1 1 1v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM15 4h4a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM15 12h4a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1v-6a1 1 0 0 1 1-1zM5 15h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1z',
+    carteira: 'M4 8h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1zM9 8V6a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2M3 13h18',
+    documento: 'M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4',
+    calendario: 'M6 5h12a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zM4 10h16M8 3v4M16 3v4',
+    sino: 'M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15zM10 20.5a2 2 0 0 0 4 0',
+    coleta: 'M12 4v10M8 10l4 4 4-4M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2',
+    usuarios: 'M9 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM3 20a6 6 0 0 1 12 0M16 4.5a3.5 3.5 0 0 1 0 6.5M18 14.5a6 6 0 0 1 3 5.5',
+    ajustes: 'M4 7h9M17 7h3M4 17h3M11 17h9M15 5v4M9 15v4',
+    busca: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
+    mais: 'M12 5v14M5 12h14',
+    exportar: 'M12 15V4M8 8l4-4 4 4M4 15v3a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-3',
+    esquerda: 'M15 6l-6 6 6 6',
+    direita: 'M9 6l6 6-6 6',
+    abaixo: 'M6 9l6 6 6-6',
+    filtro: 'M4 5h16l-6 7.5V19l-4-2v-4.5z',
+    relogio: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 7v5l3 2',
+    alerta: 'M10.3 4.9a2 2 0 0 1 3.4 0l7 12.1A2 2 0 0 1 19 20H5a2 2 0 0 1-1.7-3zM12 10v4M12 17h.01',
+    ok: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM8.5 12.5l2.5 2.5 4.5-5',
+    atividade: 'M3 12h4l3-7 4 14 3-7h4',
+    menu: 'M4 7h16M4 12h16M4 17h16',
+    fechar: 'M6 6l12 12M18 6L6 18',
+    email: 'M5 6h14a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2zM3.5 7.5L12 13l8.5-5.5',
+    opcoes: 'M6 12h.01M12 12h.01M18 12h.01',
+    sair: 'M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3M10 16l-4-4 4-4M6 12h10',
+    relatorio: 'M4 20V4M4 20h16M8 16v-5M12 16V8M16 16v-3',
+    glossario: 'M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h10',
+    admin: 'M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z',
+    rpi: 'M12 8c4.4 0 8-1.3 8-3s-3.6-3-8-3-8 1.3-8 3 3.6 3 8 3zM4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3',
+    atualizar: 'M20 11a8 8 0 0 0-14.5-4.5L4 8M4 4v4h4M4 13a8 8 0 0 0 14.5 4.5L20 16M20 20v-4h-4',
+    externo: 'M14 4h6v6M20 4l-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4',
+    invencao: 'M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2V16h5v-.1c0-.8.4-1.5 1-2A6 6 0 0 0 12 3z',
+    software: 'M8 7l-5 5 5 5M16 7l5 5-5 5M14 4l-4 16',
+    ver: 'M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z',
+    editar: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16zM13.5 6.5l4 4',
+    check: 'M5 12.5l4.5 4.5L19 7',
+    anexo: 'M20 11.5l-7.8 7.8a5 5 0 0 1-7.1-7.1l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7l-8.5 8.5a1.7 1.7 0 0 1-2.4-2.4l7.8-7.8',
+    dinheiro: 'M4 7h16a1 1 0 0 1 1 1v8a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8a1 1 0 0 1 1-1zM12 14.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM6.5 10v4M17.5 10v4',
+    tarefa: 'M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2'
+  };
+
+  function Icon(p) {
+    var size = p.size || 20;
+    var d = PATHS[p.name] || PATHS.documento;
+    return h('svg', { className: cx('rp-icon', p.className), width: size, height: size, viewBox: '0 0 24 24', 'aria-hidden': p.label ? undefined : 'true', role: p.label ? 'img' : undefined, 'aria-label': p.label },
+      h('path', { d: d, strokeWidth: p.name === 'opcoes' ? 3 : undefined }));
+  }
+
+  function Button(p) {
+    var variant = p.variant || 'secondary', size = p.size || 'md';
+    var rest = Object.assign({}, p); delete rest.variant; delete rest.size; delete rest.icon; delete rest.iconRight; delete rest.className; delete rest.children;
+    return h('button', Object.assign({ type: 'button' }, rest, { className: cx('rp-btn', 'rp-btn-' + variant, size === 'sm' && 'rp-btn-sm', p.className) }),
+      p.icon ? h(Icon, { name: p.icon, size: size === 'sm' ? 16 : 18 }) : null,
+      p.children,
+      p.iconRight ? h(Icon, { name: p.iconRight, size: size === 'sm' ? 16 : 18 }) : null);
+  }
+
+  function IconButton(p) {
+    return h('button', { type: 'button', className: cx('rp-iconbtn', p.className), 'aria-label': p.label, title: p.label, onClick: p.onClick },
+      h(Icon, { name: p.icon }), p.dot ? h('span', { className: 'rp-iconbtn-dot' }) : null);
+  }
+
+  function Badge(p) {
+    return h('span', { className: cx('rp-badge', 'rp-badge-' + (p.tone || 'neutral'), p.dot && 'rp-badge-dot', p.className) }, p.children);
+  }
+
+  function DispatchCode(p) { return h('span', { className: 'rp-code', title: p.title }, p.code || p.children); }
+  function ProcessNumber(p) { return h('span', { className: 'rp-mono', style: { fontSize: p.size || 13, fontWeight: 500, color: 'var(--ink)' } }, p.children); }
+
+  function Avatar(p) {
+    var size = p.size || 36;
+    var ini = (p.name || '?').split(/\s+/).filter(Boolean).slice(0, 2).map(function (s) { return s[0]; }).join('').toUpperCase();
+    return h('span', { className: 'rp-avatar', style: { width: size, height: size, fontSize: Math.round(size * 0.36) }, 'aria-hidden': 'true' }, ini);
+  }
+
+  function Card(p) {
+    var head = (p.title || p.action || p.count != null) ? h('div', { className: 'rp-card-head' },
+      p.icon ? h('span', { style: { color: 'var(--ink-subtle)', display: 'flex' } }, h(Icon, { name: p.icon })) : null,
+      h('h2', { className: 'heading' }, p.title),
+      p.count != null ? h(Badge, { tone: p.countTone || 'neutral' }, p.count) : null,
+      p.action || null) : null;
+    return h('section', { className: cx('rp-card', p.className), style: p.style },
+      head,
+      h('div', { className: p.flush ? 'rp-card-flush' : 'rp-card-body' }, p.children));
+  }
+
+  function StatCard(p) {
+    return h('div', { className: 'rp-card rp-stat' },
+      h('div', { className: 'rp-stat-top' }, h(Badge, { tone: p.tone || 'primary' }, p.label), p.icon ? h(Icon, { name: p.icon }) : null),
+      h('p', { className: 'rp-stat-value kpi' }, p.value),
+      p.delta ? h('span', { className: cx('rp-stat-delta', p.deltaTone && 'is-' + p.deltaTone) }, p.delta) : null);
+  }
+
+  function FieldWrap(p, control) {
+    return h('label', { className: cx('rp-field', p.error && 'rp-field-error', p.className), style: p.style },
+      p.label ? h('span', { className: 'rp-field-label label' }, p.label, p.required ? h('span', { className: 'req', 'aria-hidden': 'true' }, '*') : null) : null,
+      control,
+      (p.error || p.hint) ? h('span', { className: 'rp-field-hint' }, p.error || p.hint) : null);
+  }
+
+  function TextField(p) {
+    var control = p.multiline
+      ? h('div', { className: 'rp-input rp-input-area' }, h('textarea', { name: p.name, placeholder: p.placeholder, defaultValue: p.value, rows: p.rows || 3, onChange: p.onChange }))
+      : h('div', { className: cx('rp-input', p.mono && 'rp-input-mono') },
+        p.icon ? h(Icon, { name: p.icon, size: 18 }) : null,
+        h('input', { type: p.type || 'text', name: p.name, placeholder: p.placeholder, defaultValue: p.value, required: p.required, onChange: p.onChange }),
+        p.suffix || null);
+    return FieldWrap(p, control);
+  }
+
+  function Select(p) {
+    var control = h('div', { className: 'rp-input' },
+      h('select', { name: p.name, defaultValue: p.value, onChange: p.onChange }, (p.options || []).map(function (o) { return h('option', { key: o, value: o }, o); })),
+      h(Icon, { name: 'abaixo', size: 18 }));
+    return FieldWrap(p, control);
+  }
+
+  function SearchField(p) {
+    return h('div', { className: 'rp-input rp-search', style: p.style },
+      h(Icon, { name: 'busca', size: 18 }),
+      h('input', { type: 'search', placeholder: p.placeholder || 'Buscar processos, títulos, inventores…', 'aria-label': 'Buscar', value: p.value, onChange: p.onChange ? function (e) { p.onChange(e.target.value); } : undefined, onKeyDown: p.onSubmit ? function (e) { if (e.key === 'Enter') p.onSubmit(e.target.value); } : undefined }),
+      h('span', { className: 'rp-kbd' }, '/'));
+  }
+
+  function Toggle(p) {
+    var s = React.useState(!!p.checked), on = s[0], set = s[1];
+    return h('label', { className: cx('rp-toggle', on && 'is-on') },
+      h('input', { type: 'checkbox', checked: on, onChange: function () { set(!on); if (p.onChange) p.onChange(!on); }, style: { position: 'absolute', opacity: 0, width: 1, height: 1 } }),
+      h('span', { className: 'rp-toggle-track' }), p.label ? h('span', null, p.label) : null);
+  }
+
+  function Tabs(p) {
+    var s = React.useState(p.active || (p.items[0] && p.items[0].id)), act = p.onChange && p.active ? p.active : s[0], set = s[1];
+    return h('div', { className: 'rp-tabs', role: 'tablist' }, p.items.map(function (it) {
+      return h('button', { key: it.id, role: 'tab', 'aria-selected': act === it.id, className: cx('rp-tab', act === it.id && 'is-active'), onClick: function () { set(it.id); if (p.onChange) p.onChange(it.id); } },
+        it.label, it.count != null ? h('span', { className: 'rp-tab-count' }, it.count) : null);
+    }));
+  }
+
+  function Chip(p) {
+    var s = React.useState(!!p.on), on = s[0], set = s[1];
+    return h('button', { type: 'button', className: cx('rp-chip', on && 'is-on'), 'aria-pressed': on, onClick: function () { set(!on); if (p.onChange) p.onChange(!on); } },
+      on ? h(Icon, { name: 'check', size: 14 }) : null, p.children);
+  }
+
+  function Meter(p) {
+    var pct = Math.max(0, Math.min(100, (p.value / (p.max || 100)) * 100));
+    return h('div', { className: cx('rp-meter', p.tone && 't-' + p.tone), role: 'meter', 'aria-valuenow': p.value, 'aria-valuemax': p.max || 100 }, h('i', { style: { width: pct + '%' } }));
+  }
+
+  function PageHeader(p) {
+    return h('header', { className: 'rp-ph' },
+      h('div', { className: 'rp-ph-text' },
+        p.eyebrow ? h('p', { className: 'rp-ph-eyebrow eyebrow' }, p.eyebrow) : null,
+        h('h1', { className: cx('rp-ph-title', p.size === 'display' ? 'display' : 'title') }, p.title),
+        p.subtitle ? h('p', { className: 'rp-ph-sub body' }, p.subtitle) : null),
+      p.actions ? h('div', { className: 'rp-ph-actions' }, p.actions) : null);
+  }
+
+  var NAV_USER = [
+    { id: 'painel', label: 'Painel', icon: 'painel' },
+    { id: 'carteira', label: 'Carteira de ativos', icon: 'carteira' },
+    { id: 'alertas', label: 'Alertas', icon: 'sino', count: 4 },
+    { id: 'calendario', label: 'Calendário', icon: 'calendario' },
+    { id: 'tarefas', label: 'Tarefas', icon: 'tarefa', count: 3 },
+    { id: 'relatorios', label: 'Relatórios', icon: 'relatorio' },
+    { id: 'glossario', label: 'Glossário de despachos', icon: 'glossario' }
+  ];
+  var NAV_ADMIN = [
+    { id: 'coleta', label: 'Coleta da RPI', icon: 'rpi' },
+    { id: 'usuarios', label: 'Usuários e perfis', icon: 'usuarios' },
+    { id: 'regras', label: 'Regras de prazo', icon: 'ajustes' }
+  ];
+  var NAV_INVENTOR = [
+    { id: 'meus', label: 'Meus ativos', icon: 'invencao' },
+    { id: 'alertas', label: 'Alertas', icon: 'sino', count: 2 },
+    { id: 'calendario', label: 'Calendário', icon: 'calendario' },
+    { id: 'glossario', label: 'Glossário de despachos', icon: 'glossario' }
+  ];
+
+  function Sidebar(p) {
+    var active = p.active || 'painel', counts = p.counts || {};
+    function item(it) {
+      var count = counts[it.id] != null ? counts[it.id] : it.count;
+      return h('a', { key: it.id, href: '#' + it.id, className: cx('rp-nav', active === it.id && 'is-active'), 'aria-current': active === it.id ? 'page' : undefined,
+        onClick: function (e) { if (p.onNavigate) { e.preventDefault(); p.onNavigate(it.id); } } },
+        h(Icon, { name: it.icon }), it.label, count ? h('span', { className: 'rp-nav-count' }, count) : null);
+    }
+    return h('nav', { className: 'rp-side', 'aria-label': 'Navegação principal' },
+      h('div', { className: 'rp-brand' },
+        h('span', { className: 'rp-brand-mark' }, 'R'),
+        h('div', null, h('div', { className: 'rp-brand-name' }, 'Radar INPI'), h('div', { className: 'rp-brand-sub' }, 'NIT · UFCA'))),
+      p.role === 'inventor'
+        ? h(F, null, h('div', { className: 'rp-side-label' }, 'Inventor(a)'), NAV_INVENTOR.map(item))
+        : h(F, null, h('div', { className: 'rp-side-label' }, 'Acompanhamento'), NAV_USER.map(item)),
+      p.role === 'admin' ? h(F, null, h('div', { className: 'rp-side-label' }, 'Administração'), NAV_ADMIN.map(item)) : null,
+      p.foot !== undefined ? p.foot : h('div', { className: 'rp-side-foot' }, h('strong', null, 'Próxima coleta'), 'Terça, 20 out · 06:00', h('br'), 'Última: RPI 2907 · ok'));
+  }
+
+  function Topbar(p) {
+    var u = p.user || { name: 'Ana Costa', role: 'Administradora' };
+    return h('div', { className: 'rp-top' },
+      h(SearchField, { value: p.search, onChange: p.onSearch, onSubmit: p.onSearchSubmit }),
+      h('span', { className: 'rp-top-spacer' }),
+      p.extra || null,
+      h(IconButton, { icon: 'sino', label: 'Notificações', dot: p.dot !== false, onClick: p.onBell }),
+      h('button', { type: 'button', className: 'rp-user', onClick: p.onUser, style: { background: 'var(--surface)', font: 'inherit', cursor: p.onUser ? 'pointer' : 'default', textAlign: 'left' } }, h(Avatar, { name: u.name, size: 34 }),
+        h('div', null, h('div', { className: 'rp-user-name' }, u.name), h('div', { className: 'rp-user-role' }, u.role)),
+        h(Icon, { name: 'abaixo', size: 16, className: 'rp-subtle' })));
+  }
+
+  function AppShell(p) {
+    return h('div', { className: 'rp-shell' },
+      h(Sidebar, { active: p.active, role: p.role, onNavigate: p.onNavigate, counts: p.counts, foot: p.foot }),
+      h('div', { className: 'rp-main' }, h(Topbar, { user: p.user, dot: p.dot, onBell: p.onBell, onUser: p.onUser, search: p.search, onSearch: p.onSearch, onSearchSubmit: p.onSearchSubmit, extra: p.topExtra }), h('main', { className: 'rp-content' }, p.children)));
+  }
+
+  function AlertItem(p) {
+    var tone = p.tone || 'primary';
+    var icon = p.icon || ({ critical: 'alerta', warning: 'relogio', info: 'documento', success: 'ok', primary: 'sino' })[tone];
+    return h('div', { className: cx('rp-alert', p.unread && 'is-unread', p.onClick && 'is-clickable'), onClick: p.onClick, role: p.onClick ? 'button' : undefined, tabIndex: p.onClick ? 0 : undefined },
+      h('span', { className: 'rp-alert-icon t-' + tone }, h(Icon, { name: icon })),
+      h('div', { style: { minWidth: 0 } },
+        h('p', { className: 'rp-alert-title body' }, p.code ? h(DispatchCode, { code: p.code }) : null, p.title),
+        h('p', { className: 'rp-alert-meta body-sm' }, p.meta)),
+      h('div', { className: 'rp-alert-side' },
+        p.badge ? h(Badge, { tone: tone, dot: true }, p.badge) : null,
+        h('span', { className: 'caption rp-subtle', style: { display: 'flex', alignItems: 'center', gap: 6 } }, p.unread ? h('span', { className: 'rp-unread-dot', 'aria-label': 'Não lido' }) : null, p.time)));
+  }
+
+  function Timeline(p) {
+    return h('ol', { className: 'rp-tl' }, (p.items || []).map(function (it, i) {
+      return h('li', { key: i, className: 'rp-tl-item' },
+        h('div', { className: 'rp-tl-date' }, h('b', null, it.date), it.rpi ? h('span', null, 'RPI ' + it.rpi) : null),
+        h('div', { className: 'rp-tl-rail' }, h('span', { className: 'rp-tl-node t-' + (it.tone || 'primary') })),
+        h('div', { className: 'rp-tl-body' },
+          h('p', { className: 'rp-tl-title body', style: { fontWeight: 700 } }, it.code ? h(DispatchCode, { code: it.code }) : null, it.title, it.badge ? h(Badge, { tone: it.tone }, it.badge) : null),
+          it.description ? h('p', { className: 'rp-tl-desc body-sm' }, it.description) : null,
+          it.deadline ? h('div', { className: cx('rp-tl-deadline', it.deadlineState && 'is-' + it.deadlineState) },
+            h(Icon, { name: it.deadlineState === 'done' ? 'ok' : 'relogio', size: 18 }), h('span', { style: { flex: 1 } }, it.deadline),
+            it.deadlineAction || null) : null));
+    }));
+  }
+
+  function DataTable(p) {
+    return h('div', { className: 'rp-table-wrap' }, h('table', { className: 'rp-table' },
+      h('thead', null, h('tr', null, p.columns.map(function (c) { return h('th', { key: c.key, className: c.align === 'right' ? 'is-right' : undefined, style: c.width ? { width: c.width } : undefined }, c.label); }))),
+      h('tbody', null, p.rows.map(function (r, i) {
+        return h('tr', { key: r.id != null ? r.id : i, className: p.onRowClick ? 'is-clickable' : undefined, onClick: p.onRowClick ? function () { p.onRowClick(r); } : undefined }, p.columns.map(function (c) {
+          return h('td', { key: c.key, className: c.align === 'right' ? 'is-right' : undefined }, c.render ? c.render(r) : r[c.key]);
+        }));
+      }))));
+  }
+
+  var MESES = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+  var DOW = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function CalendarMonth(p) {
+    var st = React.useState({ y: p.year, m: p.month }), cur = st[0], setCur = st[1];
+    var sel = React.useState(p.selected || null), selected = p.onSelect && p.selected !== undefined ? p.selected : sel[0], setSelected = sel[1];
+    var first = new Date(cur.y, cur.m - 1, 1), start = new Date(first); start.setDate(1 - first.getDay());
+    var byDate = {}; (p.events || []).forEach(function (e) { (byDate[e.date] = byDate[e.date] || []).push(e); });
+    var cells = [];
+    for (var i = 0; i < 42; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var key = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+      cells.push({ d: d, key: key, out: d.getMonth() !== cur.m - 1, ev: byDate[key] || [] });
+    }
+    if (cells.slice(35).every(function (c) { return c.out; })) cells = cells.slice(0, 35);
+    var max = p.compact ? 0 : 2;
+    function move(k) { var m = cur.m + k, y = cur.y; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } setCur({ y: y, m: m }); }
+    return h('div', { className: cx('rp-cal', p.compact && 'rp-cal-compact') },
+      h('div', { className: 'rp-cal-head' },
+        h('h3', { className: 'heading' }, MESES[cur.m - 1] + ' ' + cur.y),
+        p.compact ? null : h(Button, { size: 'sm', onClick: function () { setCur({ y: p.year, m: p.month }); } }, 'Hoje'),
+        h(IconButton, { icon: 'esquerda', label: 'Mês anterior', onClick: function () { move(-1); } }),
+        h(IconButton, { icon: 'direita', label: 'Próximo mês', onClick: function () { move(1); } })),
+      h('div', { className: 'rp-cal-grid' },
+        DOW.map(function (d) { return h('div', { key: d, className: 'rp-cal-dow' }, p.compact ? d[0] : d); }),
+        cells.map(function (c) {
+          return h('div', { key: c.key, className: cx('rp-cal-day', c.out && 'is-out', c.key === p.today && 'is-today', c.key === selected && 'is-selected'), onClick: function () { setSelected(c.key); if (p.onSelect) p.onSelect(c.key, c.ev); } },
+            h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' } },
+              h('span', { className: 'rp-cal-num' }, c.d.getDate()),
+              p.compact && c.ev.length ? h('span', { className: 'rp-cal-dots' }, c.ev.slice(0, 3).map(function (e, j) { return h('i', { key: j, className: 't-' + (e.tone || 'primary') }); })) : null),
+            c.ev.slice(0, max).map(function (e, j) { return h('div', { key: j, className: 'rp-cal-ev t-' + (e.tone || 'primary'), title: e.label }, e.label); }),
+            !p.compact && c.ev.length > max ? h('div', { className: 'rp-cal-more' }, '+' + (c.ev.length - max) + ' mais') : null);
+        })));
+  }
+
+  window.RadarINPI = Object.assign(window.RadarINPI || {}, {
+    Icon: Icon, Button: Button, IconButton: IconButton, Badge: Badge, DispatchCode: DispatchCode, ProcessNumber: ProcessNumber, Avatar: Avatar,
+    Card: Card, StatCard: StatCard, TextField: TextField, Select: Select, SearchField: SearchField, Toggle: Toggle, Tabs: Tabs, Chip: Chip, Meter: Meter,
+    PageHeader: PageHeader, Sidebar: Sidebar, Topbar: Topbar, AppShell: AppShell, AlertItem: AlertItem, Timeline: Timeline, DataTable: DataTable, CalendarMonth: CalendarMonth,
+    ICONS: Object.keys(PATHS)
+  });
+})();
+
+</script>
+<script>
+(function () {
+var R = window.RadarINPI, h = React.createElement, F = React.Fragment, useState = React.useState, useEffect = React.useEffect;
+
+/* ---------- dados de exemplo (fictícios) ---------- */
+var ASSETS0 = [
+  { id: 'a1', t: 'Biofilme antimicrobiano de quitosana para embalagens', n: 'BR 10 2024 018733-2', nat: 'Patente de invenção', inv: ['Marta Alencar', 'Joana Lima'], dep: '27 ago 2024', ult: '6.1 · 13 out', s: 'Exigência', tone: 'warning', p: '11 jan 2027', resp: 'Ricardo Melo', mov: true, cls: 'C08L 5/08', anuid: '3ª · ago 2027',
+    tl: [
+      { date: '13 out 2026', rpi: '2907', code: '6.1', title: 'Exigência técnica', tone: 'warning', badge: 'Prazo aberto', description: 'O examinador solicita adequação do quadro reivindicatório e esclarecimento sobre o exemplo 3 do relatório descritivo.', deadline: 'Responder até 11 jan 2027 · 89 dias restantes · responsável: Ricardo Melo', task: 't1' },
+      { date: '02 jun 2026', rpi: '2888', code: '7.1', title: 'Conhecimento de parecer técnico', tone: 'success', description: 'Parecer com objeções de atividade inventiva. Manifestação protocolada pelo NIT.', deadline: 'Cumprido em 18 ago 2026 · protocolo 870260045512', deadlineState: 'done' },
+      { date: '17 mar 2026', rpi: '2877', title: 'Pedido de exame técnico', tone: 'primary', description: 'Requerimento de exame protocolado pela universidade.' },
+      { date: '10 mar 2026', rpi: '2876', code: '3.1', title: 'Publicação do pedido', tone: 'info', description: 'Fim do período de sigilo de 18 meses.' },
+      { date: '27 ago 2024', title: 'Depósito', tone: 'primary', description: 'Pedido depositado eletronicamente pelo e-Patentes.' }] },
+  { id: 'a2', t: 'Sensor capacitivo de umidade do solo', n: 'BR 10 2023 021870-4', nat: 'Patente de invenção', inv: ['Ricardo Melo'], dep: '02 out 2023', ult: '7.1 · 21 jul', s: 'Prazo crítico', tone: 'critical', p: '16 out 2026', resp: 'Ricardo Melo', cls: 'G01N 27/22', anuid: '4ª · out 2026',
+    tl: [
+      { date: '21 jul 2026', rpi: '2895', code: '7.1', title: 'Conhecimento de parecer técnico', tone: 'critical', badge: 'Vence em 2 dias', description: 'Parecer desfavorável quanto à novidade da reivindicação 1.', deadline: 'Responder até 16 out 2026 · 2 dias restantes', deadlineState: 'critical', task: 't2' },
+      { date: '05 nov 2025', rpi: '2859', code: '3.1', title: 'Publicação do pedido', tone: 'info' },
+      { date: '02 out 2023', title: 'Depósito', tone: 'primary' }] },
+  { id: 'a3', t: 'Secador solar de frutas', n: 'BR 10 2022 004512-8', nat: 'Patente de invenção', inv: ['Francisco Sampaio', 'Ana Costa'], dep: '14 mar 2022', ult: '9.1 · 13 out', s: 'Deferido', tone: 'success', p: '12 dez 2026', resp: 'Ana Costa', mov: true, cls: 'F26B 3/28', anuid: '5ª · mar 2027',
+    tl: [
+      { date: '13 out 2026', rpi: '2907', code: '9.1', title: 'Deferimento', tone: 'success', badge: 'Deferido', description: 'Pedido deferido. Pagar a retribuição da expedição da carta-patente.', deadline: 'Pagar retribuição até 12 dez 2026 · 59 dias restantes', task: 't3' },
+      { date: '19 mai 2026', rpi: '2886', code: '6.1', title: 'Exigência técnica', tone: 'success', deadline: 'Cumprida em 01 jul 2026', deadlineState: 'done' },
+      { date: '22 out 2023', rpi: '2754', code: '3.1', title: 'Publicação do pedido', tone: 'info' },
+      { date: '14 mar 2022', title: 'Depósito', tone: 'primary' }] },
+  { id: 'a4', t: 'SIGA-Cariri — gestão de bacias hidrográficas', n: 'BR 51 2025 002417-0', nat: 'Programa de computador', inv: ['Lucas Batista'], dep: '03 fev 2025', ult: 'Registro · 18 mar', s: 'Registrado', tone: 'success', p: '—', resp: 'Lucas Batista', cls: '—', anuid: 'Não se aplica',
+    tl: [{ date: '18 mar 2025', rpi: '2827', title: 'Certificado de registro expedido', tone: 'success', badge: 'Registrado' }, { date: '03 fev 2025', title: 'Pedido de registro', tone: 'primary' }] },
+  { id: 'a5', t: 'Suporte ergonômico para colheita', n: 'BR 20 2023 007702-9', nat: 'Modelo de utilidade', inv: ['Joana Lima'], dep: '19 abr 2023', ult: '9.2 · 22 set', s: 'Indeferido', tone: 'critical', p: '20 out 2026', resp: 'Joana Lima', cls: 'A01D 46/24', anuid: 'Suspensa',
+    tl: [{ date: '22 set 2026', rpi: '2904', code: '9.2', title: 'Indeferimento', tone: 'critical', badge: 'Indeferido', description: 'O NIT avalia a apresentação de recurso.', deadline: 'Recurso até 20 out 2026 · 6 dias restantes', deadlineState: 'critical', task: 't4' }, { date: '12 dez 2024', rpi: '2813', code: '3.1', title: 'Publicação do pedido', tone: 'info' }, { date: '19 abr 2023', title: 'Depósito', tone: 'primary' }] },
+  { id: 'a6', t: 'Processo de extração de pectina do caju', n: 'BR 10 2021 015230-6', nat: 'Patente de invenção', inv: ['Carla Tavares'], dep: '30 jul 2021', ult: '3.1 · 05 jan 2023', s: 'Em exame', tone: 'info', p: '22 out 2026', resp: 'Ricardo Melo', cls: 'C08B 37/06', anuid: '5ª · jul 2026',
+    tl: [{ date: '—', title: '5ª anuidade', tone: 'warning', badge: 'Janela ordinária', description: 'Anuidade calculada a partir da data de depósito.', deadline: 'Pagar até 22 out 2026', task: 't5' }, { date: '05 jan 2023', rpi: '2713', code: '3.1', title: 'Publicação do pedido', tone: 'info' }, { date: '30 jul 2021', title: 'Depósito', tone: 'primary' }] },
+  { id: 'a7', t: 'Sensor de umidade do solo para irrigação', n: 'BR 10 2024 009981-1', nat: 'Patente de invenção', inv: ['Ricardo Melo', 'Paulo Nunes'], dep: '11 abr 2024', ult: '3.1 · 13 out', s: 'Publicado', tone: 'info', p: '—', resp: 'Ricardo Melo', mov: true, cls: 'A01G 25/16', anuid: '3ª · abr 2027',
+    tl: [{ date: '13 out 2026', rpi: '2907', code: '3.1', title: 'Publicação do pedido', tone: 'info', description: 'Sem prazo associado.' }, { date: '11 abr 2024', title: 'Depósito', tone: 'primary' }] },
+  { id: 'a8', t: 'App Cordel — acervo digital de literatura de cordel', n: 'BR 51 2026 000812-3', nat: 'Programa de computador', inv: ['Tiago Feitosa'], dep: '09 set 2026', ult: '—', s: 'Depositado', tone: 'neutral', p: '—', resp: 'Lucas Batista', cls: '—', anuid: 'Não se aplica',
+    tl: [{ date: '09 set 2026', title: 'Pedido de registro', tone: 'primary' }] },
+  { id: 'a9', t: 'Filtro cerâmico de baixo custo para água', n: 'BR 10 2019 027764-1', nat: 'Patente de invenção', inv: ['Marta Alencar'], dep: '20 dez 2019', ult: '16.1 · 13 out', s: 'Concedida', tone: 'success', p: '—', resp: 'Ana Costa', mov: true, cls: 'C02F 1/00', anuid: '8ª · dez 2026',
+    tl: [{ date: '13 out 2026', rpi: '2907', code: '16.1', title: 'Concessão da patente', tone: 'success', badge: 'Concedida', description: 'Carta-patente expedida. Vigência até 20 dez 2039.' }, { date: '01 jul 2026', rpi: '2892', code: '9.1', title: 'Deferimento', tone: 'success' }, { date: '20 dez 2019', title: 'Depósito', tone: 'primary' }] }
+];
+
+var ALERTS0 = [
+  { id: 'l1', g: 'RPI 2907 · terça, 13 de outubro', tone: 'warning', code: '6.1', title: 'Exigência técnica publicada', a: 'a1', meta: 'prazo de 90 dias · resp. Ricardo Melo', badge: 'Até 11 jan 2027', time: '13 out', unread: true, prazo: true, mine: false, inv: true },
+  { id: 'l2', g: 'RPI 2907 · terça, 13 de outubro', tone: 'success', code: '9.1', title: 'Pedido deferido', a: 'a3', meta: 'pagar retribuição da carta-patente', badge: 'Até 12 dez 2026', time: '13 out', unread: true, prazo: true, mine: true },
+  { id: 'l3', g: 'RPI 2907 · terça, 13 de outubro', tone: 'info', code: '3.1', title: 'Pedido publicado', a: 'a7', meta: 'sem prazo', time: '13 out', unread: true },
+  { id: 'l4', g: 'RPI 2907 · terça, 13 de outubro', tone: 'success', code: '16.1', title: 'Carta-patente concedida', a: 'a9', meta: 'vigência até 2039', badge: 'Concedida', time: '13 out', unread: true },
+  { id: 'l5', g: 'Prazos calculados', tone: 'critical', code: '7.1', title: 'Prazo vence em 2 dias', a: 'a2', meta: 'resp. Ricardo Melo', badge: '16 out', time: 'Hoje 07:00', prazo: true },
+  { id: 'l6', g: 'Prazos calculados', tone: 'critical', icon: 'alerta', title: 'Recurso contra indeferimento vence em 6 dias', a: 'a5', meta: 'resp. Joana Lima', badge: '20 out', time: 'Hoje 07:00', prazo: true, inv: true },
+  { id: 'l7', g: 'Prazos calculados', tone: 'warning', icon: 'dinheiro', title: 'Janela de anuidade aberta', a: 'a6', meta: '5ª anuidade · GRU não emitida', badge: 'Até 22 out', time: 'Ontem', prazo: true, mine: true },
+  { id: 'l8', g: 'Sistema', tone: 'primary', icon: 'rpi', title: 'RPI 2907 coletada e processada', meta: '31.408 despachos lidos · 6 referem-se a ativos da UFCA · 4 min 12 s', time: '13 out 06:12' }
+];
+
+var TASKS0 = [
+  { id: 't2', a: 'a2', code: '7.1', title: 'Manifestar-se sobre parecer técnico', due: '16 out 2026', dias: 2, resp: 'Ricardo Melo', st: 'andamento' },
+  { id: 't4', a: 'a5', code: '9.2', title: 'Apresentar recurso contra indeferimento', due: '20 out 2026', dias: 6, resp: 'Joana Lima', st: 'fazer' },
+  { id: 't5', a: 'a6', code: '—', title: 'Emitir e pagar GRU da 5ª anuidade', due: '22 out 2026', dias: 8, resp: 'Ana Costa', st: 'fazer' },
+  { id: 't3', a: 'a3', code: '9.1', title: 'Pagar retribuição da carta-patente', due: '12 dez 2026', dias: 59, resp: 'Ana Costa', st: 'fazer' },
+  { id: 't1', a: 'a1', code: '6.1', title: 'Responder exigência técnica', due: '11 jan 2027', dias: 89, resp: 'Ricardo Melo', st: 'fazer' }
+];
+
+var EVENTS = [
+  { date: '2026-09-29', label: 'RPI 2905', tone: 'primary', k: 'rpi' }, { date: '2026-10-06', label: 'RPI 2906', tone: 'primary', k: 'rpi' }, { date: '2026-10-13', label: 'RPI 2907', tone: 'primary', k: 'rpi' },
+  { date: '2026-10-20', label: 'RPI 2908', tone: 'primary', k: 'rpi' }, { date: '2026-10-27', label: 'RPI 2909', tone: 'primary', k: 'rpi' }, { date: '2026-11-03', label: 'RPI 2910', tone: 'primary', k: 'rpi' },
+  { date: '2026-11-10', label: 'RPI 2911', tone: 'primary', k: 'rpi' }, { date: '2026-11-17', label: 'RPI 2912', tone: 'primary', k: 'rpi' }, { date: '2026-11-24', label: 'RPI 2913', tone: 'primary', k: 'rpi' },
+  { date: '2026-12-01', label: 'RPI 2914', tone: 'primary', k: 'rpi' }, { date: '2026-12-08', label: 'RPI 2915', tone: 'primary', k: 'rpi' },
+  { date: '2026-10-16', label: 'Prazo 7.1 · Sensor capacitivo', tone: 'critical', k: 'prazo', a: 'a2' },
+  { date: '2026-10-13', label: 'Exigência 6.1 · Biofilme', tone: 'warning', k: 'prazo', a: 'a1' },
+  { date: '2026-10-20', label: 'Recurso · Suporte ergonômico', tone: 'critical', k: 'prazo', a: 'a5' },
+  { date: '2026-10-22', label: 'Anuidade · Pectina do caju', tone: 'warning', k: 'anuidade', a: 'a6' },
+  { date: '2026-12-12', label: 'Retribuição · Secador solar', tone: 'warning', k: 'prazo', a: 'a3' },
+  { date: '2027-01-11', label: 'Prazo 6.1 · Biofilme', tone: 'warning', k: 'prazo', a: 'a1' },
+  { date: '2026-10-13', label: 'Concessão 16.1 · Filtro cerâmico', tone: 'success', k: 'concessao', a: 'a9' },
+  { date: '2026-10-20', label: 'Reunião do NIT', tone: 'info', k: 'lembrete' },
+  { date: '2026-11-05', label: 'Relatório FORMICT (rascunho)', tone: 'info', k: 'lembrete' }
+];
+
+var RPI0 = [
+  { e: '2907', d: '13 out 2026', sz: '48,2 MB', lidos: '31.408', m: '6', t: '4 min 12 s', s: 'Processada', tone: 'success' },
+  { e: '2906', d: '06 out 2026', sz: '46,9 MB', lidos: '30.877', m: '3', t: '4 min 01 s', s: 'Processada', tone: 'success' },
+  { e: '2905', d: '29 set 2026', sz: '—', lidos: '—', m: '—', t: '—', s: 'Falhou · 2 tentativas', tone: 'critical' },
+  { e: '2904', d: '22 set 2026', sz: '47,5 MB', lidos: '31.112', m: '2', t: '4 min 20 s', s: 'Processada', tone: 'success' },
+  { e: '2903', d: '15 set 2026', sz: '45,8 MB', lidos: '29.954', m: '4', t: '3 min 58 s', s: 'Processada', tone: 'success' }
+];
+
+var USERS0 = [
+  { id: 'u1', n: 'Ana Costa', e: 'ana.costa@ufca.edu.br', p: 'Administrador', tone: 'primary', a: '—', u: 'Agora' },
+  { id: 'u2', n: 'Ricardo Melo', e: 'ricardo.melo@ufca.edu.br', p: 'Usuário', tone: 'info', a: '34 ativos', u: 'Há 2 h' },
+  { id: 'u3', n: 'Joana Lima', e: 'joana.lima@aluno.ufca.edu.br', p: 'Inventor', tone: 'neutral', a: '2 ativos', u: 'Há 3 dias' },
+  { id: 'u4', n: 'Marta Alencar', e: 'marta.alencar@ufca.edu.br', p: 'Inventor', tone: 'neutral', a: '5 ativos', u: 'Há 1 semana' },
+  { id: 'u5', n: 'Lucas Batista', e: 'lucas.batista@ufca.edu.br', p: 'Usuário', tone: 'info', a: '21 ativos', u: 'Convite pendente' }
+];
+
+var RULES0 = [
+  { id: 'r1', code: '6.1', nome: 'Exigência técnica', dias: 90, base: 'Data da RPI', on: true },
+  { id: 'r2', code: '7.1', nome: 'Conhecimento de parecer técnico', dias: 90, base: 'Data da RPI', on: true },
+  { id: 'r3', code: '9.1', nome: 'Deferimento — retribuição da carta-patente', dias: 60, base: 'Data da RPI', on: true },
+  { id: 'r4', code: '9.2', nome: 'Indeferimento — recurso', dias: 60, base: 'Data da RPI', on: true },
+  { id: 'r5', code: '3.1', nome: 'Publicação do pedido', dias: 0, base: 'Sem prazo', on: true },
+  { id: 'r6', code: '16.1', nome: 'Concessão da patente', dias: 0, base: 'Sem prazo', on: true },
+  { id: 'r7', code: 'Anuidade', nome: 'Anuidade (janela ordinária)', dias: 90, base: 'Aniversário do depósito', on: true }
+];
+
+var GLOSSARIO = [
+  ['3.1', 'Publicação do pedido', 'O pedido saiu do sigilo e agora é público. Ninguém precisa agir.', 'Sem prazo'],
+  ['6.1', 'Exigência técnica', 'O examinador pediu ajustes ou esclarecimentos. O NIT precisa responder com os inventores.', '90 dias'],
+  ['7.1', 'Conhecimento de parecer técnico', 'Saiu um parecer, em geral com objeções. Cabe manifestação.', '90 dias'],
+  ['9.1', 'Deferimento', 'O pedido foi aprovado. Falta pagar a retribuição para a expedição da carta-patente.', '60 dias'],
+  ['9.2', 'Indeferimento', 'O pedido foi negado. Cabe recurso.', '60 dias'],
+  ['16.1', 'Concessão da patente', 'A carta-patente foi expedida. A partir daqui, só as anuidades.', 'Sem prazo']
+];
+
+var USERS_BY_ROLE = {
+  admin: { name: 'Ana Costa', role: 'Administradora · NIT' },
+  user: { name: 'Ricardo Melo', role: 'Técnico do NIT' },
+  inventor: { name: 'Joana Lima', role: 'Inventora' }
+};
+
+/* ---------- utilitários ---------- */
+function proc(t, n) { return h('div', null, h('div', { className: 'rp-cell-title' }, t), h('div', { className: 'rp-cell-sub rp-mono' }, n)); }
+function norm(s) { return (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+function stack(children, gap) { return h('div', { className: 'rp-stack', style: { gap: gap || 20 } }, children); }
+
+/* ---------- telas ---------- */
+function Painel(ctx) {
+  var urgentes = ctx.alerts.filter(function (a) { return a.prazo; }).slice(0, 4);
+  var dots = EVENTS.map(function (e) { return { date: e.date, tone: e.tone, label: e.label }; });
+  return h(F, null,
+    h(R.PageHeader, { size: 'display', eyebrow: 'Painel · quarta, 14 de outubro', title: 'Boa tarde, ' + ctx.user.name.split(' ')[0], subtitle: 'A RPI 2907 trouxe 6 despachos para a carteira da UFCA. 2 prazos vencem nesta semana.',
+      actions: h(F, null, h(R.Button, { icon: 'exportar', onClick: function () { ctx.toast('Exportação do painel em PDF gerada (simulação).'); } }, 'Exportar'), ctx.role !== 'inventor' ? h(R.Button, { variant: 'primary', icon: 'mais', onClick: function () { ctx.go('cadastro'); } }, 'Novo ativo') : null) }),
+    h('div', { className: 'rp-grid rp-g4' },
+      h('div', { className: 'proto-click', onClick: function () { ctx.go('carteira'); } }, h(R.StatCard, { label: 'Ativos monitorados', tone: 'primary', icon: 'carteira', value: String(139 + ctx.assets.length), delta: '+6 neste semestre', deltaTone: 'success' })),
+      h('div', { className: 'proto-click', onClick: function () { ctx.go('tarefas'); } }, h(R.StatCard, { label: 'Prazos abertos', tone: 'warning', icon: 'relogio', value: String(ctx.tasks.filter(function (t) { return t.st !== 'cumprida'; }).length), delta: '2 vencem nesta semana', deltaTone: 'critical' })),
+      h('div', { className: 'proto-click', onClick: function () { ctx.go('alertas'); } }, h(R.StatCard, { label: 'Despachos na semana', tone: 'info', icon: 'documento', value: '6', delta: 'RPI 2907 · 13 out' })),
+      h('div', { className: 'proto-click', onClick: function () { ctx.go('relatorios'); } }, h(R.StatCard, { label: 'Concedidos em 2026', tone: 'success', icon: 'ok', value: '11', delta: '+3 vs. 2025', deltaTone: 'success' }))),
+    h('div', { className: 'rp-grid rp-g-main' },
+      stack([
+        h(R.Card, { key: 'c1', title: 'Precisa de atenção', count: urgentes.length + ' prazos', countTone: 'critical', flush: true, action: h(R.Button, { variant: 'ghost', size: 'sm', iconRight: 'direita', onClick: function () { ctx.go('alertas'); } }, 'Ver alertas') },
+          urgentes.map(function (a) { var as = ctx.asset(a.a); return h(R.AlertItem, { key: a.id, tone: a.tone, code: a.code, icon: a.icon, title: a.title, meta: (as ? as.n + ' · ' + as.t + ' · ' : '') + a.meta, badge: a.badge, time: a.time, unread: a.unread, onClick: function () { ctx.readAlert(a.id); if (a.a) ctx.openAsset(a.a); } }); })),
+        h(R.Card, { key: 'c2', title: 'Última edição da RPI', action: h(R.Badge, { tone: 'success', dot: true }, 'Processada') },
+          h('div', { className: 'rp-grid rp-g3', style: { gap: 16 } },
+            h('div', null, h('div', { className: 'caption rp-subtle' }, 'Edição'), h('div', { className: 'heading rp-mono' }, 'RPI 2907')),
+            h('div', null, h('div', { className: 'caption rp-subtle' }, 'Publicada'), h('div', { className: 'heading' }, '13 out · 06:12')),
+            h('div', null, h('div', { className: 'caption rp-subtle' }, 'Despachos cruzados'), h('div', { className: 'heading' }, '6 de 31.408'))),
+          h('div', { style: { marginTop: 16 } }, h(R.Meter, { value: 100, tone: 'success' })))
+      ]),
+      stack([
+        h(R.Card, { key: 'c3', title: 'Calendário', action: h(R.Button, { variant: 'ghost', size: 'sm', iconRight: 'direita', onClick: function () { ctx.go('calendario'); } }, 'Abrir') },
+          h(R.CalendarMonth, { compact: true, year: 2026, month: 10, today: '2026-10-14', events: dots, onSelect: function () { ctx.go('calendario'); } })),
+        h(R.Card, { key: 'c4', title: 'Atividade recente' }, h('ul', { className: 'rp-list' },
+          [['Ana Costa', 'cadastrou', 'Kit didático de robótica', 'Há 8 min'], ['Robô de coleta', 'processou', 'RPI 2907 · 6 despachos', 'Ontem 06:12'], ['Ricardo Melo', 'anexou resposta em', 'BR 10 2023 021870-4', 'Ontem 15:40']].map(function (a, i) {
+            return h('li', { key: i }, h(R.Avatar, { name: a[0], size: 32 }), h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { className: 'body-sm' }, h('b', null, a[0]), ' ', h('span', { className: 'rp-muted' }, a[1]), ' ', a[2]), h('div', { className: 'caption rp-subtle' }, a[3])));
+          })))
+      ])));
+}
+
+function Carteira(ctx) {
+  var st = useState('todos'), tab = st[0], setTab = st[1];
+  var nf = useState({ 'Patente de invenção': true, 'Modelo de utilidade': true, 'Programa de computador': true }), nats = nf[0], setNats = nf[1];
+  var q = norm(ctx.search);
+  var rows = ctx.assets.filter(function (a) {
+    if (!nats[a.nat] && nats[a.nat] !== undefined) return false;
+    if (tab === 'prazo' && a.p === '—') return false;
+    if (tab === 'mov' && !a.mov) return false;
+    if (tab === 'arq') return false;
+    if (q && norm(a.t + ' ' + a.n + ' ' + a.inv.join(' ') + ' ' + a.nat).indexOf(q) < 0) return false;
+    return true;
+  });
+  function chip(n, label) { return h(R.Chip, { key: n, on: nats[n], onChange: function (on) { var c = Object.assign({}, nats); c[n] = on; setNats(c); } }, label); }
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Carteira', title: 'Ativos da universidade', subtitle: (139 + ctx.assets.length) + ' ativos · clique em uma linha para ver a linha do tempo de despachos',
+      actions: h(F, null, h(R.Button, { icon: 'coleta', onClick: function () { ctx.toast('Importação por planilha: escolha um arquivo .xlsx ou .csv (simulação).'); } }, 'Importar planilha'), h(R.Button, { variant: 'primary', icon: 'mais', onClick: function () { ctx.go('cadastro'); } }, 'Novo ativo')) }),
+    h(R.Card, { flush: true },
+      h('div', { style: { display: 'flex', gap: 12, alignItems: 'center', padding: '4px 24px 16px', flexWrap: 'wrap' } },
+        h(R.Tabs, { items: [{ id: 'todos', label: 'Todos', count: ctx.assets.length }, { id: 'prazo', label: 'Com prazo', count: ctx.assets.filter(function (a) { return a.p !== '—'; }).length }, { id: 'mov', label: 'Movimentados na semana', count: ctx.assets.filter(function (a) { return a.mov; }).length }, { id: 'arq', label: 'Arquivados', count: 0 }], active: tab, onChange: setTab }),
+        h('span', { style: { flex: 1 } }),
+        chip('Patente de invenção', 'Invenção'), chip('Modelo de utilidade', 'Modelo de utilidade'), chip('Programa de computador', 'Programa de computador')),
+      ctx.search ? h('div', { style: { padding: '0 24px 12px' }, className: 'rp-row' }, h('span', { className: 'body-sm rp-muted' }, 'Filtrando por “' + ctx.search + '”'), h(R.Button, { size: 'sm', variant: 'ghost', icon: 'fechar', onClick: function () { ctx.setSearch(''); } }, 'Limpar busca')) : null,
+      rows.length ? h('div', { className: 'rp-table-tight' }, h(R.DataTable, { onRowClick: function (r) { ctx.openAsset(r.id); }, columns: [
+        { key: 't', label: 'Ativo', render: function (r) { return proc(r.t, r.n); } },
+        { key: 'nat', label: 'Natureza' }, { key: 'inv', label: 'Inventores / autores', render: function (r) { return r.inv.join(', '); } }, { key: 'dep', label: 'Depósito' },
+        { key: 'ult', label: 'Último despacho', render: function (r) { return h('span', { className: 'rp-mono', style: { fontSize: 12 } }, r.ult); } },
+        { key: 's', label: 'Situação', render: function (r) { return h(R.Badge, { tone: r.tone, dot: true }, r.s); } },
+        { key: 'p', label: 'Próximo prazo', render: function (r) { return h('span', { style: { fontWeight: 700, whiteSpace: 'nowrap', color: r.tone === 'critical' && r.p !== '—' ? 'var(--critical)' : 'var(--ink)' } }, r.p); } }], rows: rows }))
+        : h('div', { className: 'proto-empty' }, h(R.Icon, { name: 'busca', size: 28 }), h('p', { className: 'heading', style: { margin: '8px 0 4px' } }, 'Nenhum ativo encontrado'), h('p', { className: 'body-sm rp-muted', style: { margin: 0 } }, 'Revise os filtros ou a busca.')),
+      h('div', { style: { display: 'flex', alignItems: 'center', padding: '16px 24px 4px', gap: 8 } }, h('span', { className: 'body-sm rp-muted', style: { flex: 1 } }, 'Mostrando ' + rows.length + ' de ' + (139 + ctx.assets.length) + ' (amostra do protótipo)'))));
+}
+
+function MeusAtivos(ctx) {
+  var mine = ctx.assets.filter(function (a) { return a.inv.indexOf(ctx.user.name) >= 0; });
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Meus ativos', title: 'Olá, ' + ctx.user.name.split(' ')[0], subtitle: 'Você é inventora em ' + mine.length + ' ativos da UFCA. Avisamos por e-mail sempre que o INPI publicar algo sobre eles.' }),
+    h('div', { className: 'rp-grid rp-g2' }, mine.map(function (a) {
+      var last = a.tl[0];
+      return h(R.Card, { key: a.id, title: a.t, action: h(R.Badge, { tone: a.tone, dot: true }, a.s) },
+        stack([h(R.ProcessNumber, { key: 'n' }, a.n),
+          h('p', { key: 'd', className: 'body rp-muted', style: { margin: 0 } }, 'Último despacho: ' + last.title + (last.date !== '—' ? ' (' + last.date + ')' : '') + '. ' + (last.description || '')),
+          a.p !== '—' ? h('div', { key: 'p', className: 'caption rp-subtle' }, 'Prazo do NIT: ' + a.p) : null,
+          a.p !== '—' ? h(R.Meter, { key: 'm', value: a.tone === 'critical' ? 90 : 10, tone: a.tone === 'critical' ? 'critical' : undefined }) : null,
+          h('div', { key: 'b', className: 'rp-row' }, h(R.Button, { size: 'sm', variant: 'primary', onClick: function () { ctx.openAsset(a.id); } }, 'Ver linha do tempo'), h(R.Button, { size: 'sm', icon: 'email', onClick: function () { ctx.toast('Mensagem enviada ao NIT (simulação).'); } }, 'Falar com o NIT'))], 12));
+    })),
+    h(R.Card, { title: 'Minhas notificações' }, stack([h(R.Toggle, { key: 1, label: 'E-mail a cada novo despacho', checked: true }), h(R.Toggle, { key: 2, label: 'Resumo mensal dos meus ativos' })], 12)));
+}
+
+function Ativo(ctx) {
+  var a = ctx.asset(ctx.assetId) || ctx.assets[0];
+  var readOnly = ctx.role === 'inventor';
+  var items = a.tl.map(function (it) {
+    var x = Object.assign({}, it);
+    if (it.task && !readOnly) {
+      var t = ctx.tasks.filter(function (k) { return k.id === it.task; })[0];
+      if (t && t.st === 'cumprida') { x.deadlineState = 'done'; x.deadline = 'Cumprido hoje · registrado por ' + ctx.user.name; }
+      else x.deadlineAction = h(R.Button, { size: 'sm', icon: 'tarefa', onClick: function () { ctx.go('tarefas'); } }, 'Ver tarefa');
+    }
+    return x;
+  });
+  return h(F, null,
+    h('div', { className: 'rp-row', style: { gap: 8 } }, h(R.Button, { variant: 'ghost', size: 'sm', icon: 'esquerda', onClick: function () { ctx.go(readOnly ? 'meus' : 'carteira'); } }, readOnly ? 'Meus ativos' : 'Carteira'), h('span', { className: 'rp-subtle body-sm' }, '/'), h(R.ProcessNumber, null, a.n)),
+    h(R.PageHeader, { eyebrow: a.nat, title: a.t, subtitle: h(F, null, h(R.Badge, { tone: a.tone, dot: true }, a.s), h('span', { style: { marginLeft: 8 } }, 'Depositado em ' + a.dep + ' · Titular: Universidade Federal do Cariri')),
+      actions: h(F, null, h(R.Button, { icon: 'externo', onClick: function () { ctx.toast('Abriria a consulta pública do processo no site do INPI.'); } }, 'Ver no INPI'), readOnly ? null : h(R.Button, { variant: 'primary', icon: 'editar', onClick: function () { ctx.toast('Edição do ativo (simulação).'); } }, 'Editar')) }),
+    h('div', { className: 'rp-grid rp-g-side' },
+      h(R.Card, { title: 'Linha do tempo de despachos', count: a.tl.length + (a.tl.length === 1 ? ' evento' : ' eventos'), action: h(R.Button, { variant: 'ghost', size: 'sm', icon: 'exportar', onClick: function () { ctx.toast('Linha do tempo exportada em PDF (simulação).'); } }, 'PDF') }, h(R.Timeline, { items: items })),
+      stack([
+        h(R.Card, { key: 'd', title: 'Dados do ativo' },
+          h('dl', { className: 'rp-dl' },
+            h('dt', null, 'Número'), h('dd', { className: 'rp-mono' }, a.n),
+            h('dt', null, 'Natureza'), h('dd', null, a.nat),
+            h('dt', null, 'Depósito'), h('dd', null, a.dep),
+            h('dt', null, 'Situação'), h('dd', null, a.s),
+            h('dt', null, 'Classificação'), h('dd', { className: 'rp-mono' }, a.cls),
+            h('dt', null, 'Responsável'), h('dd', null, a.resp),
+            h('dt', null, 'Próx. anuidade'), h('dd', null, a.anuid))),
+        h(R.Card, { key: 'i', title: 'Inventores / autores', flush: true, action: readOnly ? null : h(R.Button, { variant: 'ghost', size: 'sm', icon: 'mais', onClick: function () { ctx.toast('Vincular inventor (simulação).'); } }, 'Vincular') },
+          h('ul', { className: 'rp-list', style: { padding: '0 24px' } }, a.inv.map(function (p, i) { return h('li', { key: i }, h(R.Avatar, { name: p, size: 34 }), h('div', { style: { flex: 1 } }, h('div', { className: 'label' }, p), h('div', { className: 'caption rp-subtle' }, i === 0 ? 'Inventor(a) principal' : 'Coinventor(a)'))); }))),
+        h(R.Card, { key: 'f', title: 'Documentos', flush: true, action: readOnly ? null : h(R.Button, { variant: 'ghost', size: 'sm', icon: 'anexo', onClick: function () { ctx.toast('Anexar documento (simulação).'); } }, 'Anexar') },
+          h('ul', { className: 'rp-list', style: { padding: '0 24px' } }, [['Relatório descritivo.pdf', a.dep], ['Procuração.pdf', a.dep]].map(function (d, i) { return h('li', { key: i }, h('span', { className: 'rp-alert-icon t-primary', style: { width: 34, height: 34 } }, h(R.Icon, { name: 'documento', size: 18 })), h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { className: 'body-sm', style: { fontWeight: 700 } }, d[0]), h('div', { className: 'caption rp-subtle' }, d[1]))); })))
+      ])));
+}
+
+function Alertas(ctx) {
+  var st = useState('todos'), tab = st[0], setTab = st[1];
+  var list = ctx.alerts.filter(function (a) {
+    if (ctx.role === 'inventor' && !a.inv) return false;
+    if (tab === 'nao') return a.unread;
+    if (tab === 'prazo') return a.prazo;
+    if (tab === 'meus') return a.mine;
+    return true;
+  });
+  var groups = []; list.forEach(function (a) { var g = groups.filter(function (x) { return x.g === a.g; })[0]; if (!g) { g = { g: a.g, items: [] }; groups.push(g); } g.items.push(a); });
+  var unread = ctx.alerts.filter(function (a) { return a.unread; }).length;
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Alertas', title: 'Central de alertas', subtitle: unread + ' não lidos · os mesmos alertas foram enviados por e-mail aos responsáveis.',
+      actions: h(F, null, h(R.Button, { icon: 'email', onClick: function () { ctx.go('email'); } }, 'Ver e-mail enviado'), h(R.Button, { icon: 'check', onClick: ctx.readAll }, 'Marcar todos como lidos')) }),
+    h('div', { className: 'rp-row' }, h(R.Tabs, { items: [{ id: 'todos', label: 'Todos', count: ctx.alerts.length }, { id: 'nao', label: 'Não lidos', count: unread }, { id: 'prazo', label: 'Com prazo', count: ctx.alerts.filter(function (a) { return a.prazo; }).length }, { id: 'meus', label: 'Atribuídos a mim', count: ctx.alerts.filter(function (a) { return a.mine; }).length }], active: tab, onChange: setTab })),
+    h(R.Card, { flush: true }, groups.length ? groups.map(function (g, gi) {
+      return h(F, { key: g.g }, h('div', { className: 'eyebrow rp-subtle', style: { padding: gi ? '20px 24px 8px' : '4px 24px 8px', borderTop: gi ? '1px solid var(--line)' : 0, textTransform: 'uppercase' } }, g.g),
+        g.items.map(function (a) { var as = ctx.asset(a.a); return h(R.AlertItem, { key: a.id, tone: a.tone, code: a.code, icon: a.icon, title: a.title, meta: (as ? as.n + ' · ' + as.t + ' · ' : '') + a.meta, badge: a.badge, time: a.time, unread: a.unread, onClick: function () { ctx.readAlert(a.id); if (a.a) ctx.openAsset(a.a); else ctx.go('coleta'); } }); }));
+    }) : h('div', { className: 'proto-empty' }, h(R.Icon, { name: 'ok', size: 28 }), h('p', { className: 'heading', style: { margin: '8px 0 4px' } }, 'Tudo em dia'), h('p', { className: 'body-sm rp-muted', style: { margin: 0 } }, 'Nenhum alerta nesta visão.'))));
+}
+
+function Calendario(ctx) {
+  var sel = useState('2026-10-16'), day = sel[0], setDay = sel[1];
+  var kf = useState({ rpi: true, prazo: true, anuidade: true, concessao: true, lembrete: false }), kinds = kf[0], setKinds = kf[1];
+  var ev = EVENTS.filter(function (e) { return kinds[e.k]; });
+  var dayEv = ev.filter(function (e) { return e.date === day; });
+  var d = new Date(day + 'T12:00:00');
+  var dayLabel = d.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' });
+  function chip(k, label) { return h(R.Chip, { key: k, on: kinds[k], onChange: function (on) { var c = Object.assign({}, kinds); c[k] = on; setKinds(c); } }, label); }
+  var upcoming = ev.filter(function (e) { return e.date >= '2026-10-14' && e.date <= '2026-11-13'; }).sort(function (a, b) { return a.date < b.date ? -1 : 1; });
+  var MES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Calendário', title: 'Prazos e publicações', subtitle: 'Toda terça sai uma nova RPI. Clique em um dia para ver o que acontece nele.',
+      actions: h(F, null, h(R.Button, { icon: 'calendario', onClick: function () { ctx.toast('Link .ics copiado — cole no Google Agenda ou no Outlook (simulação).'); } }, 'Assinar no Google/Outlook'), ctx.role !== 'inventor' ? h(R.Button, { variant: 'primary', icon: 'mais', onClick: function () { ctx.toast('Novo lembrete (simulação).'); } }, 'Novo lembrete') : null) }),
+    h('div', { className: 'rp-row', style: { gap: 8 } }, chip('rpi', 'Edições da RPI'), chip('prazo', 'Prazos'), chip('anuidade', 'Anuidades'), chip('concessao', 'Concessões'), chip('lembrete', 'Lembretes internos')),
+    h('div', { className: 'rp-grid rp-g-side' },
+      h(R.Card, null, h(R.CalendarMonth, { year: 2026, month: 10, today: '2026-10-14', selected: day, events: ev, onSelect: function (k) { setDay(k); } })),
+      stack([
+        h(R.Card, { key: 'd', title: dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1), count: dayEv.length ? dayEv.length + (dayEv.length > 1 ? ' eventos' : ' evento') : null, countTone: dayEv.some(function (e) { return e.tone === 'critical'; }) ? 'critical' : 'primary' },
+          dayEv.length ? h('ul', { className: 'rp-list' }, dayEv.map(function (e, i) {
+            var as = ctx.asset(e.a);
+            return h('li', { key: i, style: { alignItems: 'flex-start' } }, h('span', { className: 'rp-alert-icon t-' + e.tone, style: { width: 34, height: 34 } }, h(R.Icon, { name: e.k === 'rpi' ? 'rpi' : e.k === 'anuidade' ? 'dinheiro' : e.k === 'concessao' ? 'ok' : e.k === 'lembrete' ? 'calendario' : 'relogio', size: 18 })),
+              h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { className: 'body-sm', style: { fontWeight: 700 } }, e.label), as ? h('div', { className: 'caption rp-subtle rp-mono' }, as.n) : (e.k === 'rpi' ? h('div', { className: 'caption rp-subtle' }, 'Coleta automática às 06:00') : null),
+                as ? h('div', { style: { marginTop: 8 } }, h(R.Button, { size: 'sm', onClick: function () { ctx.openAsset(as.id); } }, 'Abrir ativo')) : null));
+          })) : h('p', { className: 'body-sm rp-muted', style: { margin: 0 } }, 'Nada marcado para este dia.')),
+        h(R.Card, { key: 'p', title: 'Próximos 30 dias', flush: true },
+          h('ul', { className: 'rp-list', style: { padding: '0 24px' } }, upcoming.map(function (e, i) {
+            var dd = e.date.split('-');
+            return h('li', { key: i, style: { cursor: 'pointer' }, onClick: function () { setDay(e.date); } }, h('div', { style: { width: 40, textAlign: 'center' } }, h('div', { className: 'heading', style: { lineHeight: '22px' } }, dd[2]), h('div', { className: 'caption rp-subtle' }, MES[+dd[1] - 1])), h('div', { style: { flex: 1, minWidth: 0 } }, h('div', { className: 'body-sm', style: { fontWeight: 700 } }, e.label)), h(R.Badge, { tone: e.tone }, e.k === 'rpi' ? 'RPI' : e.k === 'anuidade' ? 'Pagamento' : e.k === 'concessao' ? 'Concessão' : e.k === 'lembrete' ? 'Lembrete' : 'Prazo'));
+          })))
+      ])));
+}
+
+function Tarefas(ctx) {
+  var cols = [['fazer', 'A fazer'], ['andamento', 'Em andamento'], ['cumprida', 'Cumprida']];
+  function next(t) { return t.st === 'fazer' ? 'andamento' : t.st === 'andamento' ? 'cumprida' : 'fazer'; }
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Tarefas', title: 'Tarefas geradas por despachos', subtitle: 'Cada despacho com prazo vira uma tarefa com responsável. Avance o status para registrar o cumprimento.' }),
+    h('div', { className: 'rp-grid rp-g3' }, cols.map(function (c) {
+      var list = ctx.tasks.filter(function (t) { return t.st === c[0]; });
+      return h('div', { key: c[0], className: 'proto-col' },
+        h('div', { className: 'rp-row', style: { padding: '0 4px 12px' } }, h('span', { className: 'heading', style: { flex: 1 } }, c[1]), h(R.Badge, { tone: c[0] === 'cumprida' ? 'success' : c[0] === 'andamento' ? 'info' : 'neutral' }, String(list.length))),
+        stack(list.map(function (t) {
+          var as = ctx.asset(t.a); var tone = t.st === 'cumprida' ? 'success' : t.dias <= 5 ? 'critical' : t.dias <= 15 ? 'warning' : 'neutral';
+          return h('div', { key: t.id, className: 'rp-card', style: { padding: 18 } },
+            h('div', { className: 'rp-row', style: { gap: 8, marginBottom: 8 } }, h(R.DispatchCode, { code: t.code }), h('span', { style: { flex: 1 } }), h(R.Badge, { tone: tone, dot: true }, t.st === 'cumprida' ? 'Cumprida' : (t.dias <= 5 ? 'Vence em ' + t.dias + ' dias' : t.due))),
+            h('div', { className: 'label', style: { fontSize: 14 } }, t.title),
+            h('div', { className: 'caption rp-subtle', style: { margin: '4px 0 12px', cursor: 'pointer' }, onClick: function () { ctx.openAsset(t.a); } }, as.t + ' · ' + as.n),
+            h('div', { className: 'rp-row', style: { gap: 8 } }, h(R.Avatar, { name: t.resp, size: 26 }), h('span', { className: 'caption rp-muted', style: { flex: 1 } }, t.resp),
+              h(R.Button, { size: 'sm', variant: t.st === 'andamento' ? 'primary' : 'secondary', onClick: function () { ctx.setTask(t.id, next(t)); ctx.toast(next(t) === 'cumprida' ? 'Prazo registrado como cumprido.' : 'Status atualizado.'); } }, t.st === 'fazer' ? 'Iniciar' : t.st === 'andamento' ? 'Marcar cumprida' : 'Reabrir')));
+        }), 12));
+    })));
+}
+
+function Relatorios(ctx) {
+  function bars(data, tone) {
+    var max = Math.max.apply(null, data.map(function (d) { return d[1]; }));
+    return stack(data.map(function (d) { return h('div', { key: d[0] }, h('div', { className: 'rp-row', style: { justifyContent: 'space-between', marginBottom: 6 } }, h('span', { className: 'body-sm', style: { fontWeight: 600 } }, d[0]), h('span', { className: 'body-sm rp-mono' }, d[1])), h(R.Meter, { value: d[1], max: max, tone: tone })); }), 14);
+  }
+  var years = [['2020', 9], ['2021', 14], ['2022', 17], ['2023', 21], ['2024', 26], ['2025', 24], ['2026', 19]];
+  var ymax = 26;
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Relatórios', title: 'Indicadores da carteira', subtitle: 'Dados prontos para o relatório de gestão do NIT e para o FORMICT.', actions: h(F, null, h(R.Button, { icon: 'exportar', onClick: function () { ctx.toast('CSV exportado (simulação).'); } }, 'CSV'), h(R.Button, { variant: 'primary', icon: 'documento', onClick: function () { ctx.toast('Relatório FORMICT gerado em PDF (simulação).'); } }, 'Gerar relatório FORMICT')) }),
+    h('div', { className: 'rp-grid rp-g4' },
+      h(R.StatCard, { label: 'Depósitos em 2026', tone: 'primary', icon: 'carteira', value: '19', delta: 'Meta anual: 24' }),
+      h(R.StatCard, { label: 'Concessões em 2026', tone: 'success', icon: 'ok', value: '11', delta: '+3 vs. 2025', deltaTone: 'success' }),
+      h(R.StatCard, { label: 'Prazos cumpridos', tone: 'info', icon: 'relogio', value: '100%', delta: '42 de 42 em 12 meses', deltaTone: 'success' }),
+      h(R.StatCard, { label: 'Anuidades pagas', tone: 'warning', icon: 'dinheiro', value: '38', delta: '1 janela aberta', deltaTone: 'warning' })),
+    h('div', { className: 'rp-grid rp-g2' },
+      h(R.Card, { title: 'Depósitos por ano' }, h('div', { className: 'proto-chart' }, years.map(function (y) { return h('div', { key: y[0], className: 'proto-bar' }, h('span', { className: 'caption rp-mono' }, y[1]), h('i', { style: { height: (y[1] / ymax * 160) + 'px' } }), h('span', { className: 'caption rp-subtle' }, y[0])); }))),
+      h(R.Card, { title: 'Carteira por situação' }, bars([['Em exame', 52], ['Publicado', 31], ['Concedida', 27], ['Registrado (software)', 24], ['Exigência / parecer', 7], ['Arquivado', 19]], undefined)),
+      h(R.Card, { title: 'Carteira por natureza' }, bars([['Patente de invenção', 104], ['Programa de computador', 27], ['Modelo de utilidade', 17]], 'info')),
+      h(R.Card, { title: 'Ativos por centro' }, bars([['CCT — Ciência e Tecnologia', 61], ['CCAB — Ciências Agrárias', 39], ['IISCA — Saúde', 22], ['Outros', 26]], 'success'))));
+}
+
+function Glossario(ctx) {
+  var st = useState(''), q = st[0], setQ = st[1];
+  var rows = GLOSSARIO.filter(function (g) { return !q || norm(g.join(' ')).indexOf(norm(q)) >= 0; }).map(function (g) { return { id: g[0], c: g[0], n: g[1], e: g[2], p: g[3] }; });
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Glossário', title: 'Glossário de despachos', subtitle: 'O que cada código da RPI significa, em linguagem simples, e o prazo que ele gera.' }),
+    h(R.Card, { flush: true },
+      h('div', { style: { padding: '4px 24px 16px', maxWidth: 520 } }, h(R.TextField, { icon: 'busca', placeholder: 'Buscar código ou palavra…', onChange: function (e) { setQ(e.target.value); } })),
+      h('div', { className: 'rp-table-tight' }, h(R.DataTable, { columns: [
+        { key: 'c', label: 'Código', width: 90, render: function (r) { return h(R.DispatchCode, { code: r.c }); } },
+        { key: 'n', label: 'Despacho', render: function (r) { return h('span', { className: 'rp-cell-title' }, r.n); } },
+        { key: 'e', label: 'O que significa' },
+        { key: 'p', label: 'Prazo', render: function (r) { return h(R.Badge, { tone: r.p === 'Sem prazo' ? 'neutral' : 'warning' }, r.p); } }], rows: rows })),
+      h('p', { className: 'caption rp-subtle', style: { padding: '16px 24px 4px', margin: 0 } }, 'Códigos e prazos de exemplo para o protótipo. Valide com a tabela oficial de despachos do INPI.')));
+}
+
+function Cadastro(ctx) {
+  function save(e) {
+    e.preventDefault();
+    var f = new FormData(e.target);
+    var t = (f.get('titulo') || '').trim(), n = (f.get('numero') || '').trim();
+    if (t.length < 10 || n.length < 10) { ctx.toast('Preencha o título (mín. 10 caracteres) e o número do processo.'); return; }
+    var dep = f.get('deposito') ? new Date(f.get('deposito') + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/\./g, '').replace(/ de /g, ' ') : '—';
+    var id = 'n' + Date.now();
+    ctx.addAsset({ id: id, t: t, n: n, nat: f.get('natureza'), inv: [f.get('inventor') || ctx.user.name], dep: dep, ult: '—', s: f.get('situacao'), tone: 'neutral', p: '—', resp: f.get('responsavel'), cls: '—', anuid: 'A calcular', mov: true,
+      tl: [{ date: dep, title: 'Cadastro no Radar INPI', tone: 'primary', description: 'O histórico será montado a partir das RPIs já coletadas.' }] });
+    ctx.toast('Ativo cadastrado. Ele já entra no cruzamento da próxima RPI.');
+    ctx.openAsset(id);
+  }
+  return h('form', { onSubmit: save, className: 'rp-stack', style: { gap: 24 } },
+    h(R.PageHeader, { eyebrow: 'Carteira · novo ativo', title: 'Cadastrar ativo', subtitle: 'Ao informar o número, buscamos o histórico nas RPIs já coletadas e preenchemos o que for possível.',
+      actions: h(F, null, h(R.Button, { onClick: function () { ctx.go('carteira'); } }, 'Cancelar'), h(R.Button, { variant: 'primary', icon: 'check', type: 'submit' }, 'Salvar ativo')) }),
+    h('div', { className: 'rp-grid rp-g-side' },
+      stack([
+        h(R.Card, { key: 'id', title: 'Identificação' }, h('div', { className: 'rp-grid rp-g2', style: { gap: 20 } },
+          h(R.Select, { name: 'natureza', label: 'Natureza do ativo', required: true, options: ['Patente de invenção', 'Modelo de utilidade', 'Programa de computador', 'Desenho industrial'] }),
+          h(R.TextField, { name: 'numero', label: 'Número do processo', required: true, mono: true, placeholder: 'BR 10 2026 000000-0', hint: 'Formato do INPI, com espaços.' }),
+          h('div', { style: { gridColumn: '1 / -1' } }, h(R.TextField, { name: 'titulo', label: 'Título', required: true, placeholder: 'Ex.: Kit didático de robótica para o ensino médio' })),
+          h(R.TextField, { name: 'deposito', label: 'Data de depósito', required: true, type: 'date' }),
+          h(R.Select, { name: 'situacao', label: 'Situação atual', required: true, options: ['Depositado', 'Em sigilo', 'Publicado', 'Em exame', 'Deferido', 'Concedido', 'Arquivado'] }),
+          h(R.TextField, { name: 'titular', label: 'Titular', value: 'Universidade Federal do Cariri' }),
+          h(R.TextField, { name: 'cotitular', label: 'Cotitulares', placeholder: 'Empresas ou instituições parceiras' }),
+          h('div', { style: { gridColumn: '1 / -1' } }, h(R.TextField, { name: 'resumo', label: 'Resumo', multiline: true, rows: 3, placeholder: 'Uma ou duas frases sobre a invenção, para relatórios e para o portal do inventor.' })))),
+        h(R.Card, { key: 'inv', title: 'Inventores / autores' }, h('div', { className: 'rp-grid rp-g2', style: { gap: 20 } },
+          h(R.TextField, { name: 'inventor', label: 'Inventor(a) principal', placeholder: 'Nome completo' }),
+          h(R.TextField, { name: 'inventorEmail', label: 'E-mail', icon: 'email', placeholder: 'nome@ufca.edu.br' }),
+          h(R.Toggle, { label: 'Avisar inventores a cada despacho', checked: true })))
+      ]),
+      stack([
+        h(R.Card, { key: 'r', title: 'Responsável no NIT' }, h(R.Select, { name: 'responsavel', label: 'Quem acompanha este ativo', options: ['Ricardo Melo', 'Ana Costa', 'Lucas Batista'], hint: 'Recebe os alertas e as tarefas geradas por despachos.' })),
+        h(R.Card, { key: 'h', title: 'Como funciona' }, h('ul', { className: 'rp-list' }, ['Validamos o formato do número.', 'Buscamos o processo nas 412 RPIs armazenadas.', 'Montamos a linha do tempo e calculamos os prazos abertos.', 'A partir da próxima terça, cada despacho vira alerta.'].map(function (s, i) { return h('li', { key: i }, h('span', { className: 'rp-alert-icon t-primary', style: { width: 28, height: 28, borderRadius: 999 } }, h('b', { className: 'caption' }, i + 1)), h('span', { className: 'body-sm' }, s)); })))
+      ])));
+}
+
+function Coleta(ctx) {
+  var rs = useState(RPI0), rows = rs[0], setRows = rs[1];
+  var ps = useState(null), run = ps[0], setRun = ps[1];
+  var STEPS = ['Download do XML', 'Validação do arquivo', 'Leitura dos despachos', 'Cruzamento com a carteira', 'Envio de alertas e e-mails'];
+  useEffect(function () {
+    if (!run || run.step >= STEPS.length) return;
+    var t = setTimeout(function () { setRun({ ed: run.ed, step: run.step + 1 }); }, 700);
+    return function () { clearTimeout(t); };
+  }, [run]);
+  useEffect(function () {
+    if (run && run.step >= STEPS.length) {
+      setRows(function (rr) { return rr.map(function (r) { return r.e === run.ed ? Object.assign({}, r, { sz: '47,1 MB', lidos: '30.511', m: '1', t: '3 min 50 s', s: 'Processada', tone: 'success' }) : r; }); });
+      ctx.toast('RPI ' + run.ed + ' processada: 1 despacho da UFCA encontrado.');
+    }
+  }, [run && run.step]);
+  function start(ed) { setRun({ ed: ed, step: 0 }); }
+  var running = run && run.step < STEPS.length;
+  var fails = rows.filter(function (r) { return r.tone === 'critical'; }).length;
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Administração', title: 'Coleta da RPI', subtitle: 'Download automático dos XMLs da Revista da Propriedade Industrial toda terça-feira, com histórico completo.',
+      actions: h(F, null, h(R.Button, { icon: 'ajustes', onClick: function () { ctx.toast('Agendamento: terças, 06:00, até 3 novas tentativas.'); } }, 'Agendamento'), h(R.Button, { variant: 'primary', icon: 'atualizar', disabled: running, onClick: function () { start('2905'); } }, running ? 'Coletando…' : 'Coletar agora')) }),
+    h('div', { className: 'rp-grid rp-g4' },
+      h(R.StatCard, { label: 'Próxima coleta', tone: 'primary', icon: 'calendario', value: '20 out', delta: 'Terça · 06:00 · RPI 2908' }),
+      h(R.StatCard, { label: 'Edições armazenadas', tone: 'info', icon: 'rpi', value: '412', delta: 'Desde a RPI 2496 · 19,3 GB' }),
+      h(R.StatCard, { label: 'Taxa de sucesso', tone: 'success', icon: 'ok', value: fails ? '98,8%' : '100%', delta: 'Últimas 52 semanas', deltaTone: 'success' }),
+      h(R.StatCard, { label: 'Pendências', tone: fails ? 'critical' : 'success', icon: fails ? 'alerta' : 'ok', value: String(fails), delta: fails ? 'RPI 2905 não baixada' : 'Nenhuma', deltaTone: fails ? 'critical' : 'success' })),
+    h('div', { className: 'rp-grid rp-g-side' },
+      h(R.Card, { title: 'Edições coletadas', flush: true },
+        h('div', { className: 'rp-table-tight' }, h(R.DataTable, { columns: [
+          { key: 'e', label: 'Edição', render: function (r) { return h('span', { className: 'rp-mono', style: { fontWeight: 600 } }, 'RPI ' + r.e); } }, { key: 'd', label: 'Publicação' }, { key: 'sz', label: 'XML' }, { key: 'lidos', label: 'Despachos lidos', align: 'right' }, { key: 'm', label: 'Da UFCA', align: 'right', render: function (r) { return h('b', null, r.m); } }, { key: 't', label: 'Duração' },
+          { key: 's', label: 'Status', render: function (r) { return r.tone === 'critical' ? h('div', { className: 'rp-row', style: { gap: 8, flexWrap: 'nowrap' } }, h(R.Badge, { tone: 'critical', dot: true }, r.s), h(R.Button, { size: 'sm', icon: 'atualizar', disabled: running, onClick: function () { start(r.e); } }, 'Reprocessar')) : h(R.Badge, { tone: r.tone, dot: true }, r.s); } }], rows: rows }))),
+      stack([
+        h(R.Card, { key: 's', title: run ? 'Coletando RPI ' + run.ed : 'Etapas da última coleta', action: running ? h(R.Badge, { tone: 'info', dot: true }, 'Em andamento') : null },
+          run ? h('div', { style: { marginBottom: 12 } }, h(R.Meter, { value: run.step, max: STEPS.length, tone: run.step >= STEPS.length ? 'success' : undefined })) : null,
+          h('ul', { className: 'rp-list' }, STEPS.map(function (s, i) {
+            var done = !run || i < run.step, cur = run && i === run.step;
+            return h('li', { key: i }, h('span', { className: 'rp-alert-icon ' + (done ? 't-success' : cur ? 't-info' : ''), style: { width: 28, height: 28, borderRadius: 999 } }, h(R.Icon, { name: done ? 'check' : cur ? 'atualizar' : 'relogio', size: 16 })), h('span', { className: 'body-sm', style: { flex: 1, fontWeight: 600, color: done || cur ? 'var(--ink)' : 'var(--ink-subtle)' } }, s), h('span', { className: 'caption rp-subtle rp-mono' }, run ? (done ? 'ok' : cur ? '…' : '') : ['06:00:04', '06:00:41', '06:03:10', '06:04:02', '06:04:16'][i]));
+          }))),
+        h(R.Card, { key: 'f', title: 'Fonte' }, stack([h('div', { key: 1, className: 'body-sm rp-muted' }, 'Seções monitoradas'), h('div', { key: 2, className: 'rp-row', style: { gap: 8 } }, h(R.Chip, { on: true }, 'Patentes'), h(R.Chip, { on: true }, 'Programas de computador'), h(R.Chip, null, 'Desenhos industriais'), h(R.Chip, null, 'Contratos de tecnologia')), h(R.Toggle, { key: 3, label: 'Avisar administradores se a coleta falhar', checked: true })], 12))
+      ])));
+}
+
+function Usuarios(ctx) {
+  var us = useState(USERS0), users = us[0], setUsers = us[1];
+  var tb = useState('t'), tab = tb[0], setTab = tb[1];
+  var inv = useState(false), inviting = inv[0], setInviting = inv[1];
+  var map = { a: 'Administrador', u: 'Usuário', i: 'Inventor' };
+  var rows = users.filter(function (u) { return tab === 't' || u.p === map[tab]; });
+  function invite(e) {
+    e.preventDefault(); var f = new FormData(e.target); var n = (f.get('nome') || '').trim(), em = (f.get('email') || '').trim();
+    if (!n || !em) { ctx.toast('Informe nome e e-mail.'); return; }
+    var p = f.get('perfil'); setUsers(users.concat([{ id: 'u' + Date.now(), n: n, e: em, p: p, tone: p === 'Administrador' ? 'primary' : p === 'Usuário' ? 'info' : 'neutral', a: '—', u: 'Convite pendente' }]));
+    setInviting(false); ctx.toast('Convite enviado para ' + em + ' (simulação).');
+  }
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Administração', title: 'Usuários e perfis', subtitle: '3 perfis com permissões fixas. Toda alteração fica registrada na trilha de auditoria.',
+      actions: h(F, null, h(R.Button, { icon: 'documento', onClick: function () { ctx.toast('Trilha de auditoria (simulação).'); } }, 'Trilha de auditoria'), h(R.Button, { variant: 'primary', icon: 'mais', onClick: function () { setInviting(!inviting); } }, 'Convidar usuário')) }),
+    inviting ? h(R.Card, { title: 'Convidar usuário' }, h('form', { onSubmit: invite, className: 'rp-grid', style: { gridTemplateColumns: '1fr 1fr 220px auto', alignItems: 'end' } },
+      h(R.TextField, { name: 'nome', label: 'Nome', placeholder: 'Nome completo' }), h(R.TextField, { name: 'email', label: 'E-mail institucional', icon: 'email', placeholder: 'nome@ufca.edu.br' }),
+      h(R.Select, { name: 'perfil', label: 'Perfil', options: ['Usuário', 'Inventor', 'Administrador'] }), h(R.Button, { variant: 'primary', type: 'submit', style: { height: 44 } }, 'Enviar convite'))) : null,
+    h('div', { className: 'rp-grid rp-g3' },
+      [['Administrador', 'admin', 'Gerencia usuários, regras de prazo e a coleta da RPI. Edita qualquer ativo.'], ['Usuário', 'carteira', 'Equipe técnica do NIT: cadastra e edita ativos, recebe alertas, cumpre prazos.'], ['Inventor', 'invencao', 'Somente leitura dos próprios ativos; recebe alertas dos seus processos.']].map(function (p, i) {
+        return h(R.Card, { key: i }, stack([h('div', { key: 1, className: 'rp-row' }, h('span', { className: 'rp-alert-icon t-primary' }, h(R.Icon, { name: p[1] })), h('span', { className: 'heading', style: { flex: 1 } }, p[0]), h(R.Badge, { tone: 'primary' }, users.filter(function (u) { return u.p === p[0]; }).length + ' pessoas')), h('p', { key: 2, className: 'body-sm rp-muted', style: { margin: 0 } }, p[2])], 12));
+      })),
+    h(R.Card, { flush: true },
+      h('div', { style: { display: 'flex', padding: '4px 24px 16px', gap: 12 } }, h(R.Tabs, { items: [{ id: 't', label: 'Todos', count: users.length }, { id: 'a', label: 'Administradores', count: users.filter(function (u) { return u.p === 'Administrador'; }).length }, { id: 'u', label: 'Usuários', count: users.filter(function (u) { return u.p === 'Usuário'; }).length }, { id: 'i', label: 'Inventores', count: users.filter(function (u) { return u.p === 'Inventor'; }).length }], active: tab, onChange: setTab })),
+      h('div', { className: 'rp-table-tight' }, h(R.DataTable, { columns: [
+        { key: 'n', label: 'Pessoa', render: function (r) { return h('div', { className: 'rp-row', style: { gap: 12, flexWrap: 'nowrap' } }, h(R.Avatar, { name: r.n, size: 34 }), h('div', null, h('div', { className: 'rp-cell-title' }, r.n), h('div', { className: 'rp-cell-sub' }, r.e))); } },
+        { key: 'p', label: 'Perfil', render: function (r) { return h(R.Badge, { tone: r.tone }, r.p); } }, { key: 'a', label: 'Ativos vinculados' }, { key: 'u', label: 'Último acesso' },
+        { key: 'x', label: '', align: 'right', render: function (r) { return r.id === 'u1' ? h('span', { className: 'caption rp-subtle' }, 'Você') : h(R.Button, { size: 'sm', variant: 'danger', onClick: function () { setUsers(users.filter(function (u) { return u.id !== r.id; })); ctx.toast(r.n + ' removido(a).'); } }, 'Remover'); } }], rows: rows }))));
+}
+
+function Regras(ctx) {
+  var rs = useState(RULES0), rules = rs[0], setRules = rs[1];
+  function upd(id, k, v) { setRules(rules.map(function (r) { return r.id === id ? Object.assign({}, r, (function () { var o = {}; o[k] = v; return o; })()) : r; })); }
+  return h(F, null,
+    h(R.PageHeader, { eyebrow: 'Administração', title: 'Regras de prazo', subtitle: 'Cada código de despacho gera um prazo contado a partir da data da RPI. Alterações valem para os próximos despachos.',
+      actions: h(R.Button, { variant: 'primary', icon: 'check', onClick: function () { ctx.toast('Regras salvas.'); } }, 'Salvar regras') }),
+    h(R.Card, { flush: true },
+      h('div', { className: 'rp-table-tight' }, h(R.DataTable, { columns: [
+        { key: 'code', label: 'Código', width: 110, render: function (r) { return h(R.DispatchCode, { code: r.code }); } },
+        { key: 'nome', label: 'Despacho', render: function (r) { return h('span', { className: 'rp-cell-title' }, r.nome); } },
+        { key: 'dias', label: 'Prazo (dias)', render: function (r) { return h('div', { className: 'rp-input', style: { width: 110, height: 38 } }, h('input', { type: 'number', min: 0, value: r.dias, onChange: function (e) { upd(r.id, 'dias', +e.target.value); } })); } },
+        { key: 'base', label: 'Contado a partir de' },
+        { key: 'av', label: 'Avisos', render: function (r) { return r.dias ? h('span', { className: 'body-sm rp-muted' }, '30 · 15 · 5 · 1 dia antes') : h('span', { className: 'body-sm rp-subtle' }, '—'); } },
+        { key: 'on', label: 'Ativa', render: function (r) { return h(R.Toggle, { checked: r.on, onChange: function (v) { upd(r.id, 'on', v); } }); } }], rows: rules })),
+      h('p', { className: 'caption rp-subtle', style: { padding: '16px 24px 4px', margin: 0 } }, 'Valores de exemplo. Confirme os prazos na tabela oficial de despachos do INPI antes de ativar.')));
+}
+
+function Email(ctx) {
+  return h(F, null,
+    h('div', { className: 'rp-row', style: { gap: 8 } }, h(R.Button, { variant: 'ghost', size: 'sm', icon: 'esquerda', onClick: function () { ctx.go('alertas'); } }, 'Alertas'), h('span', { className: 'rp-subtle body-sm' }, '/ e-mail enviado a Ricardo Melo')),
+    h('div', { style: { width: 620, margin: '0 auto', background: 'var(--surface)', borderRadius: 'var(--radius-xl)', overflow: 'hidden', border: '1px solid var(--line)', boxShadow: 'var(--shadow-raised)' } },
+      h('div', { style: { background: 'var(--navy)', padding: '24px 32px', display: 'flex', alignItems: 'center', gap: 12 } }, h('span', { className: 'rp-brand-mark', style: { width: 34, height: 34, fontSize: 13 } }, 'R'), h('span', { className: 'rp-brand-name' }, 'Radar INPI'), h('span', { style: { flex: 1 } }), h('span', { className: 'caption', style: { color: 'var(--nav-ink)' } }, 'RPI 2907 · 13 out 2026')),
+      h('div', { style: { padding: 32 } },
+        h(R.Badge, { tone: 'warning', dot: true }, 'Exigência técnica · prazo de 90 dias'),
+        h('h1', { className: 'title', style: { margin: '16px 0 8px' } }, 'O INPI publicou uma exigência no seu processo'),
+        h('p', { className: 'body rp-muted', style: { margin: '0 0 24px' } }, 'Ricardo, a coleta desta terça encontrou um novo despacho para um ativo sob sua responsabilidade.'),
+        h('div', { style: { border: '1px solid var(--line)', borderRadius: 'var(--radius-lg)', padding: 20 } },
+          h('div', { className: 'label' }, 'Biofilme antimicrobiano de quitosana para embalagens'), h('div', { style: { margin: '4px 0 16px' } }, h(R.ProcessNumber, null, 'BR 10 2024 018733-2')),
+          h('dl', { className: 'rp-dl', style: { gridTemplateColumns: '120px 1fr' } }, h('dt', null, 'Despacho'), h('dd', null, h(R.DispatchCode, { code: '6.1' }), ' Exigência técnica'), h('dt', null, 'Publicado em'), h('dd', null, '13 out 2026'), h('dt', null, 'Prazo final'), h('dd', { style: { color: 'var(--warning)' } }, '11 jan 2027 (90 dias)'))),
+        h('div', { style: { margin: '28px 0' } }, h(R.Button, { variant: 'primary', iconRight: 'direita', onClick: function () { ctx.openAsset('a1'); } }, 'Abrir no Radar INPI')),
+        h('hr', { className: 'rp-divider' }),
+        h('p', { className: 'caption rp-subtle', style: { margin: '16px 0 0' } }, 'Você recebe este e-mail porque é responsável por este ativo no NIT/UFCA. Ajuste suas preferências de notificação no sistema.'))));
+}
+
+function Login(ctx) {
+  return h('div', { style: { display: 'grid', gridTemplateColumns: '1fr 1fr', minHeight: '100vh', background: 'var(--canvas)' } },
+    h('div', { style: { background: 'var(--navy)', color: 'var(--nav-ink)', padding: 56, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', borderRadius: '0 32px 32px 0' } },
+      h('div', { className: 'rp-brand', style: { padding: 0 } }, h('span', { className: 'rp-brand-mark' }, 'R'), h('div', null, h('div', { className: 'rp-brand-name' }, 'Radar INPI'), h('div', { className: 'rp-brand-sub' }, 'NIT · Universidade Federal do Cariri'))),
+      h('div', null, h('p', { className: 'display', style: { color: 'var(--nav-ink-active)', margin: '0 0 16px', maxWidth: 460 } }, 'Cada despacho do INPI, no dia em que sai.'),
+        h('p', { className: 'body', style: { margin: 0, maxWidth: 420 } }, 'A RPI é lida automaticamente toda terça. Prazos, publicações e concessões dos ativos da universidade chegam até você — no painel e por e-mail.')),
+      h('div', { className: 'caption' }, 'Última coleta: RPI 2907 · 13 out 2026 · 06:12')),
+    h('div', { style: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40 } },
+      h('form', { className: 'rp-card', onSubmit: function (e) { e.preventDefault(); ctx.login('admin'); }, style: { width: 420, padding: 40, borderRadius: 'var(--radius-xl)', boxShadow: 'var(--shadow-raised)' } },
+        h('h1', { className: 'title', style: { margin: '0 0 8px' } }, 'Entrar'), h('p', { className: 'body rp-muted', style: { margin: '0 0 28px' } }, 'Use seu e-mail institucional. No protótipo, qualquer valor funciona.'),
+        stack([h(R.TextField, { key: 1, label: 'E-mail', icon: 'email', placeholder: 'nome@ufca.edu.br' }), h(R.TextField, { key: 2, label: 'Senha', type: 'password', placeholder: '••••••••' }),
+          h('div', { key: 3, className: 'rp-row', style: { justifyContent: 'space-between' } }, h(R.Toggle, { label: 'Manter conectado' }), h(R.Button, { variant: 'ghost', size: 'sm', onClick: function () { ctx.toast('Link de redefinição enviado (simulação).'); } }, 'Esqueci a senha')),
+          h(R.Button, { key: 4, variant: 'primary', type: 'submit', style: { width: '100%' } }, 'Entrar como administradora'),
+          h('div', { key: 5, className: 'rp-row', style: { gap: 8 } }, h(R.Button, { style: { flex: 1 }, onClick: function () { ctx.login('user'); } }, 'Entrar como técnico'), h(R.Button, { style: { flex: 1 }, onClick: function () { ctx.login('inventor'); } }, 'Entrar como inventora'))], 18))));
+}
+
+var SCREENS = { painel: Painel, carteira: Carteira, meus: MeusAtivos, ativo: Ativo, alertas: Alertas, calendario: Calendario, tarefas: Tarefas, relatorios: Relatorios, glossario: Glossario, cadastro: Cadastro, coleta: Coleta, usuarios: Usuarios, regras: Regras, email: Email };
+var NAV_OF = { ativo: 'carteira', cadastro: 'carteira', email: 'alertas' };
+var ADMIN_ONLY = { coleta: 1, usuarios: 1, regras: 1 };
+var INVENTOR_OK = { meus: 1, ativo: 1, alertas: 1, calendario: 1, glossario: 1 };
+var SCREEN_LIST = [['login', 'Login'], ['painel', 'Painel'], ['carteira', 'Carteira'], ['ativo', 'Detalhe do ativo'], ['cadastro', 'Cadastro'], ['alertas', 'Alertas'], ['email', 'E-mail de alerta'], ['calendario', 'Calendário'], ['tarefas', 'Tarefas'], ['relatorios', 'Relatórios'], ['glossario', 'Glossário'], ['coleta', 'Coleta da RPI'], ['usuarios', 'Usuários'], ['regras', 'Regras de prazo'], ['meus', 'Portal do inventor']];
+
+function App() {
+  var r0 = (location.hash || '').replace('#', '');
+  var rs = useState(SCREENS[r0] || r0 === 'login' ? r0 : 'login'), route = rs[0], setRoute = rs[1];
+  var ro = useState(r0 === 'meus' ? 'inventor' : 'admin'), role = ro[0], setRole = ro[1];
+  var th = useState('light'), theme = th[0], setTheme = th[1];
+  var as = useState(ASSETS0), assets = as[0], setAssets = as[1];
+  var al = useState(ALERTS0), alerts = al[0], setAlerts = al[1];
+  var tk = useState(TASKS0), tasks = tk[0], setTasks = tk[1];
+  var ai = useState('a1'), assetId = ai[0], setAssetId = ai[1];
+  var sq = useState(''), search = sq[0], setSearch = sq[1];
+  var ts = useState(null), toastMsg = ts[0], setToast = ts[1];
+  var um = useState(false), userMenu = um[0], setUserMenu = um[1];
+  var pc = useState(true), panel = pc[0], setPanel = pc[1];
+
+  useEffect(function () { document.documentElement.setAttribute('data-theme', theme); }, [theme]);
+  useEffect(function () { try { history.replaceState(null, '', '#' + route); } catch (e) {} window.scrollTo(0, 0); setUserMenu(false); }, [route, assetId]);
+  useEffect(function () { if (!toastMsg) return; var t = setTimeout(function () { setToast(null); }, 3200); return function () { clearTimeout(t); }; }, [toastMsg]);
+
+  function go(r) {
+    if (role === 'inventor' && r === 'painel') r = 'meus';
+    if (role === 'inventor' && !INVENTOR_OK[r] && r !== 'login') { setToast('O perfil Inventor não tem acesso a esta tela.'); return; }
+    if (role !== 'admin' && ADMIN_ONLY[r]) { setToast('Somente administradores acessam esta tela.'); return; }
+    setRoute(r);
+  }
+  function login(rl) { setRole(rl); setRoute(rl === 'inventor' ? 'meus' : 'painel'); }
+  var user = USERS_BY_ROLE[role];
+  var ctx = {
+    role: role, user: user, assets: assets, alerts: alerts, tasks: tasks, assetId: assetId, search: search, setSearch: setSearch,
+    go: go, login: login, toast: setToast,
+    asset: function (id) { return assets.filter(function (a) { return a.id === id; })[0]; },
+    openAsset: function (id) { setAssetId(id); setRoute('ativo'); },
+    readAlert: function (id) { setAlerts(alerts.map(function (a) { return a.id === id ? Object.assign({}, a, { unread: false }) : a; })); },
+    readAll: function () { setAlerts(alerts.map(function (a) { return Object.assign({}, a, { unread: false }); })); setToast('Todos os alertas foram marcados como lidos.'); },
+    setTask: function (id, st) { setTasks(tasks.map(function (t) { return t.id === id ? Object.assign({}, t, { st: st }) : t; })); },
+    addAsset: function (a) { setAssets([a].concat(assets)); }
+  };
+  var unread = alerts.filter(function (a) { return a.unread && (role !== 'inventor' || a.inv); }).length;
+  var openTasks = tasks.filter(function (t) { return t.st !== 'cumprida'; }).length;
+
+  var content;
+  if (route === 'login') content = h(Login, ctx);
+  else {
+    var Screen = SCREENS[route] || Painel;
+    content = h(R.AppShell, {
+      active: NAV_OF[route] === 'carteira' && role === 'inventor' ? 'meus' : (NAV_OF[route] || route), role: role, user: user,
+      onNavigate: go, counts: { alertas: unread, tarefas: openTasks }, dot: unread > 0,
+      onBell: function () { go('alertas'); }, onUser: function () { setUserMenu(!userMenu); },
+      search: search, onSearch: function (v) { setSearch(v); if (role !== 'inventor' && route !== 'carteira') setRoute('carteira'); },
+      onSearchSubmit: function () { if (role !== 'inventor') setRoute('carteira'); }
+    }, h(Screen, Object.assign({ key: route + assetId }, ctx)));
+  }
+
+  return h(F, null, content,
+    userMenu ? h('div', { className: 'proto-menu rp-card' },
+      h('div', { className: 'caption rp-subtle', style: { padding: '4px 12px 8px', textTransform: 'uppercase', letterSpacing: '.08em' } }, 'Trocar perfil'),
+      [['admin', 'Administradora', 'admin'], ['user', 'Técnico do NIT', 'carteira'], ['inventor', 'Inventora', 'invencao']].map(function (o) { return h('button', { key: o[0], className: 'proto-menu-item' + (role === o[0] ? ' is-on' : ''), onClick: function () { setUserMenu(false); login(o[0]); } }, h(R.Icon, { name: o[2], size: 18 }), o[1]); }),
+      h('hr', { className: 'rp-divider', style: { margin: '6px 0' } }),
+      h('button', { className: 'proto-menu-item', onClick: function () { setTheme(theme === 'light' ? 'dark' : 'light'); } }, h(R.Icon, { name: 'ver', size: 18 }), theme === 'light' ? 'Tema escuro' : 'Tema claro'),
+      h('button', { className: 'proto-menu-item', onClick: function () { setUserMenu(false); setRoute('login'); } }, h(R.Icon, { name: 'sair', size: 18 }), 'Sair')) : null,
+    panel ? h('div', { className: 'proto-panel' },
+      h('div', { className: 'rp-row', style: { gap: 8, marginBottom: 10 } }, h('span', { className: 'label', style: { flex: 1 } }, 'Protótipo · Radar INPI'), h('button', { className: 'proto-x', 'aria-label': 'Recolher painel', onClick: function () { setPanel(false); } }, h(R.Icon, { name: 'fechar', size: 16 }))),
+      h('label', { className: 'caption rp-subtle' }, 'Ir para a tela'),
+      h('div', { className: 'rp-input', style: { height: 38, margin: '4px 0 10px' } }, h('select', { value: route, onChange: function (e) { var r = e.target.value; if (r === 'meus') { login('inventor'); } else if (r !== 'login' && role === 'inventor') { setRole('admin'); setRoute(r); } else if (ADMIN_ONLY[r] && role !== 'admin') { setRole('admin'); setRoute(r); } else setRoute(r); } }, SCREEN_LIST.map(function (s) { return h('option', { key: s[0], value: s[0] }, s[1]); }))),
+      h('div', { className: 'rp-row', style: { gap: 6 } },
+        h('div', { className: 'rp-tabs', style: { flex: 1 } }, [['admin', 'Admin'], ['user', 'Técnico'], ['inventor', 'Inventora']].map(function (o) { return h('button', { key: o[0], className: 'rp-tab' + (role === o[0] ? ' is-active' : ''), style: { flex: 1, padding: '0 8px', justifyContent: 'center' }, onClick: function () { login(o[0]); } }, o[1]); }))),
+      h('div', { className: 'rp-row', style: { gap: 6, marginTop: 8 } }, h(R.Button, { size: 'sm', icon: 'ver', style: { flex: 1 }, onClick: function () { setTheme(theme === 'light' ? 'dark' : 'light'); } }, theme === 'light' ? 'Tema escuro' : 'Tema claro'))
+    ) : h('button', { className: 'proto-fab', onClick: function () { setPanel(true); }, 'aria-label': 'Abrir controles do protótipo' }, h(R.Icon, { name: 'ajustes' })),
+    toastMsg ? h('div', { className: 'proto-toast', role: 'status' }, h(R.Icon, { name: 'ok', size: 18 }), toastMsg) : null);
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(h(App));
+})();
+
+</script>
+</body>
+</html>
